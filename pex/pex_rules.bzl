@@ -14,7 +14,31 @@
 
 # Derived from https://github.com/twitter/heron/blob/master/tools/rules/pex_rules.bzl
 
-"""Python pex rules for Bazel"""
+"""Python pex rules for Bazel
+
+### Setup
+
+Add something like this to your WORKSPACE file:
+
+    git_repository(
+        name = "io_bazel_rules_pex",
+        remote = "https://github.com/benley/bazel_rules_pex.git",
+        tag = "0.1",
+    )
+    load("@io_bazel_rules_pex//pex:pex.bzl", "pex_repositories")
+    pex_repositories()
+
+In a BUILD file where you want to use these rules, or in your
+`tools/build_rules/prelude_bazel` file if you want them present repo-wide, add:
+
+    load(
+        "@io_bazel_rules_pex//pex:pex.bzl",
+        "pex_binary",
+        "pex_library",
+        "pex_test",
+        "pex_pytest_test",
+    )
+"""
 
 pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
@@ -71,8 +95,8 @@ def _pex_library_impl(ctx):
       ))
 
 
-# Converts map to text format. Each file on separate line.
 def _textify_pex_input(input_map):
+  """Converts map to text format. Each file on separate line."""
   kv_pairs = ['\t%s:%s' % (pkg, input_map[pkg]) for pkg in input_map.keys()]
   return '\n'.join(kv_pairs)
 

@@ -285,7 +285,7 @@ pytest_pex_test = rule(
         ),
         '_extradeps': attr.label_list(
             default = [
-                Label('//third_party/py/pytest:wheel')
+                Label('//third_party/py/pytest')
             ],
         ),
     },

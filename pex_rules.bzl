@@ -165,7 +165,7 @@ def pex_binary_impl(ctx):
       outputs = [executable],
       command = "cp %s %s" % (deploy_pex.path, executable.path))
 
-  # TODO(bstaffin): is there any real benefit from including all the
+  # TODO(benley): is there any real benefit from including all the
   # transitive runfiles?
   return struct(files = set([executable]))#,
                 #runfiles = ctx.runfiles(transitive_files = set(_inputs)))
@@ -186,8 +186,8 @@ def pex_pytest_impl(ctx):
   pexbuilder = ctx.executable._pexbuilder
 
   pex_test_files = pex_file_types.filter(ctx.files.srcs)
-  # FIXME(bstaffin): This will probably break on paths with spaces
-  #                  But you should also stop wanting that.
+  # FIXME(benley): This will probably break on paths with spaces
+  #                But you should also stop wanting that.
   test_run_args = ' '.join([f.path for f in pex_test_files])
 
   _inputs = (

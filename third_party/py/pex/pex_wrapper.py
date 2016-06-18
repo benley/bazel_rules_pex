@@ -1,5 +1,8 @@
 #!/usr/bin/env python2.7
-""" Pex builder wrapper for use with pex_rules.bzl """
+""" Pex builder wrapper for use with pex_rules.bzl
+
+Derived from https://github.com/twitter/heron/blob/master/3rdparty/pex/_pex.py
+"""
 
 import functools
 import optparse

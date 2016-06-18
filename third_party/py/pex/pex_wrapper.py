@@ -1,14 +1,19 @@
 #!/usr/bin/env python2.7
+""" Pex builder wrapper for use with pex_rules.bzl """
 
-from __future__ import print_function
-import os
-import sys
 import functools
-import shutil
-import tempfile
 import optparse
+import os
+import pkg_resources
+import shutil
+import sys
+import tempfile
 import zipfile
 
+# Relative to workspace root:
+WHEEL_PATH = 'third_party/py/pex/wheel-0.23.0-py2.7.egg'
+SETUPTOOLS_PATH = 'third_party/py/pex/setuptools-18.0.1-py2.py3-none-any.whl'
+PKG_RESOURCES_PATH = 'third_party/setuptools/pkg_resources.py'
 
 # Try to detect if we're running from source via the repo.  Add appropriate
 # deps to our python path, so we can find the twitter libs and
@@ -19,28 +24,26 @@ if not zipfile.is_zipfile(sys.argv[0]):
     sys.modules.pop('twitter.common', None)
     sys.modules.pop('twitter.common.python', None)
 
-    root = os.path.join(
-        os.sep.join(__file__.split(os.sep)[:-6]), '3rdparty/pex/_pex.runfiles/3rdparty')
-    sys.path.insert(0, os.path.join(root, 'pex'))
-    sys.path.insert(0, os.path.join(root, 'setuptools'))
-    setuptools_py =  os.path.join(root, 'setuptools')
-    pkg_resources_py = os.path.join(root, 'setuptools/pkg_resources.py')
+    BAZEL_ROOT = os.sep.join(__file__.split(os.sep)[:-4])
+    sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/py/pex'))
+    sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/setuptools'))
+    PKG_RESOURCES_PY = os.path.join(BAZEL_ROOT, PKG_RESOURCES_PATH)
+    WHEEL_PATH = os.path.join(BAZEL_ROOT, WHEEL_PATH)
+    sys.path.insert(0, WHEEL_PATH)
 
-# Otherwise, we're running from a PEX, so import the `pkg_resources`
-# module via a resource.
+# Otherwise, we're running from a PEX, so extract pkg_resources via a resource.
 else:
-    with open(os.path.join(tempfile.mkdtemp(dir="/tmp"), "abc.txt"), "w") as foo:
-        foo.write(sys.argv[0])
-        foo.write(zipfile.is_zipfile(sys.argv[0]))
-    import pkg_resources
     pkg_resources_py_tmp = tempfile.NamedTemporaryFile(
         prefix='pkg_resources.py')
     pkg_resources_py_tmp.write(
-        pkg_resources.resource_string(__name__, 'pkg_resources.py'))
+        pkg_resources.resource_string(__name__, PKG_RESOURCES_PATH))
     pkg_resources_py_tmp.flush()
-    pkg_resources_py = pkg_resources_py_tmp.name
+    PKG_RESOURCES_PY = pkg_resources_py_tmp.name
 
-from pex.bin.pex import build_pex, configure_clp, resolve_interpreter, CANNOT_SETUP_INTERPRETER
+    sys.path.insert(0, os.path.dirname(__file__))
+
+from pex.bin.pex import (build_pex, configure_clp, resolve_interpreter,
+                         CANNOT_SETUP_INTERPRETER)
 from pex.common import die
 from pex.interpreter import PythonInterpreter
 from pex.version import SETUPTOOLS_REQUIREMENT, WHEEL_REQUIREMENT
@@ -57,42 +60,73 @@ def dereference_symlinks(src):
 
     return src
 
-# The format is first line will say if it is modules/resources/nativeLibraries/prebuiltLibraries
-# Then it will follow with a tab indentation for key:value of corresponding item.
+
 def parse_manifest(manifest_text):
+    """ Parse a pex manifest.
+
+    Manifest format:
+
+        modules:
+        	key:value
+        	...
+        resources:
+        	key:value
+        	...
+        nativeLibraries:
+        	key:value
+        	...
+        prebuiltLibraries:
+        	key:value
+        	...
+
+    Indents are *tabs*.  Sections may be left blank.
+    """
     lines = manifest_text.split('\n')
     manifest = {}
     curr_key = ''
     for line in lines:
-       tokens = line.split(':')
-       if len(tokens) != 2:
-           continue
-       elif not line.startswith('\t'):
-           manifest[tokens[0]] = {}
-           curr_key = tokens[0]
-       else:
-           # line is of form <tab>key:value
-           manifest[curr_key][tokens[0][1:]] = tokens[1]
+        tokens = line.split(':')
+        if len(tokens) != 2:
+            continue
+        elif not line.startswith('\t'):
+            manifest[tokens[0]] = {}
+            curr_key = tokens[0]
+        else:
+            # line is of form <tab>key:value
+            manifest[curr_key][tokens[0][1:]] = tokens[1]
     return manifest
 
+
 def resolve_or_die(interpreter, requirement, options):
-    resolve = functools.partial(resolve_interpreter, options.interpreter_cache_dir, options.repos)
+    """ Find a compatible interpreter, or give up and abort. """
+    resolve = functools.partial(resolve_interpreter,
+                                options.interpreter_cache_dir,
+                                options.repos)
 
     interpreter = resolve(interpreter, requirement)
     if interpreter is None:
-      die('Could not find compatible interpreter that meets requirement %s' % requirement, CANNOT_SETUP_INTERPRETER)
+        die('Could not find compatible interpreter that meets requirement %s' %
+            requirement, CANNOT_SETUP_INTERPRETER)
     return interpreter
 
+
 def main():
+    """ Main """
     # These are the options that this class will accept from the rule
     parser = optparse.OptionParser(usage="usage: %prog [options] output")
     parser.add_option('--entry-point', default='__main__')
-    parser.add_option('--no-pypi', action='store_false', dest='pypi', default=True)
-    parser.add_option('--not-zip-safe', action='store_false', dest='zip_safe', default=True)
+    parser.add_option('--no-pypi', action='store_false',
+                      dest='pypi', default=True)
+    parser.add_option('--not-zip-safe', action='store_false',
+                      dest='zip_safe', default=True)
     parser.add_option('--python', default="/usr/bin/python2.7")
     parser.add_option('--find-links', dest='find_links', default='')
+    parser.add_option('--no-use-wheel', action='store_false',
+                      dest='use_wheel', default=True)
     options, args = parser.parse_args()
 
+    # The manifest is passed via stdin or a file, as it can sometimes get too
+    # large to be passed as a CLA.
     if len(args) == 2:
         output = args[0]
         manifest_text = open(args[1], 'r').read()
@@ -103,13 +137,9 @@ def main():
         parser.error("'output' positional argument is required")
         return 1
 
-    if manifest_text.startswith('"') and  manifest_text.endswith('"'):
+    if manifest_text.startswith('"') and manifest_text.endswith('"'):
         manifest_text = manifest_text[1:len(manifest_text) - 1]
 
-    # The manifest is passed via stdin, as it can sometimes get too large
-    # to be passed as a CLA.
-    with open(os.path.join(tempfile.mkdtemp(dir="/tmp"), "stderr"), "w") as x:
-        x.write(manifest_text)
     manifest = parse_manifest(manifest_text)
 
     # Setup a temp dir that the PEX builder will use as its scratch dir.
@@ -118,49 +148,51 @@ def main():
         # These are the options that pex will use
         pparser, resolver_options_builder = configure_clp()
 
-        # Disabling wheels since the PyYAML wheel is incompatible with the Travis CI linux host.
-        # Enabling Trace logging in pex/tracer.py shows this upon failure:
-        #  pex: Target package WheelPackage('file:///tmp/tmpR_gDlG/PyYAML-3.11-cp27-cp27mu-linux_x86_64.whl')
-        #  is not compatible with CPython-2.7.3 / linux-x86_64
-        poptions, preqs = pparser.parse_args(['--no-use-wheel'] + sys.argv)
+        poptions, preqs = pparser.parse_args(sys.argv)
         poptions.entry_point = options.entry_point
         poptions.find_links = options.find_links
         poptions.pypi = options.pypi
         poptions.python = options.python
+        poptions.use_wheel = options.use_wheel
         poptions.zip_safe = options.zip_safe
 
-        print("pex options: %s" % poptions)
-        os.environ["PATH"] = ".:%s:/bin:/usr/bin" % poptions.python
+        # sys.stderr.write("pex options: %s\n" % poptions)
+        os.environ["PATH"] = "%s:/bin:/usr/bin" % poptions.python
 
-        # The version of pkg_resources.py (from setuptools) on some distros is too old for PEX. So
-        # we keep a recent version in and force it into the process by constructing a custom
-        # PythonInterpreter instance using it.
+        # The version of pkg_resources.py (from setuptools) on some distros is
+        # too old for PEX. So we keep a recent version in and force it into the
+        # process by constructing a custom PythonInterpreter instance using it.
         interpreter = PythonInterpreter(
             poptions.python,
             PythonInterpreter.from_binary(options.python).identity,
             extras={
                 # TODO: Fix this to resolve automatically
-                ('setuptools', '18.0.1'): '3rdparty/pex/setuptools-18.0.1-py2.py3-none-any.whl',
-                ('wheel', '0.23.0'): '3rdparty/pex/wheel-0.23.0-py2.7.egg'
+                ('setuptools', '18.0.1'): SETUPTOOLS_PATH,
+                ('wheel', '0.23.0'): WHEEL_PATH,
             })
 
         # resolve setuptools
-        interpreter = resolve_or_die(interpreter, SETUPTOOLS_REQUIREMENT, poptions)
+        interpreter = resolve_or_die(interpreter,
+                                     SETUPTOOLS_REQUIREMENT,
+                                     poptions)
 
         # possibly resolve wheel
         if interpreter and poptions.use_wheel:
-          interpreter = resolve_or_die(interpreter, WHEEL_REQUIREMENT, poptions)
+            interpreter = resolve_or_die(interpreter,
+                                         WHEEL_REQUIREMENT,
+                                         poptions)
 
         # Add prebuilt libraries listed in the manifest.
         reqs = manifest.get('requirements', {}).keys()
-        if len(reqs) > 0:
-          print("pex requirements: %s" % reqs)
+        # if len(reqs) > 0:
+        #   sys.stderr.write("pex requirements: %s" % reqs)
         pex_builder = build_pex(reqs, poptions,
-                                resolver_options_builder, interpreter=interpreter)
+                                resolver_options_builder,
+                                interpreter=interpreter)
 
-        # Set whether this PEX as zip-safe, meaning everything will stayed zipped up
-        # and we'll rely on python's zip-import mechanism to load modules from
-        # the PEX.  This may not work in some situations (e.g. native
+        # Set whether this PEX is zip-safe, meaning everything will stay zipped
+        # up and we'll rely on python's zip-import mechanism to load modules
+        # from the PEX.  This may not work in some situations (e.g. native
         # libraries, libraries that want to find resources via the FS).
         pex_builder.info.zip_safe = options.zip_safe
 
@@ -168,7 +200,7 @@ def main():
         pex_builder.info.entry_point = options.entry_point
 
         pex_builder.add_source(
-            dereference_symlinks(pkg_resources_py),
+            dereference_symlinks(PKG_RESOURCES_PY),
             os.path.join(pex_builder.BOOTSTRAP_DIR, 'pkg_resources.py'))
 
         # Add the sources listed in the manifest.
@@ -180,8 +212,8 @@ def main():
             # layers of symlinks here to get consistent behavior.
             try:
                 pex_builder.add_source(dereference_symlinks(src), dst)
-            except OSError as e:
-                raise Exception("Failed to add {}: {}".format(src, e))
+            except OSError as err:
+                raise Exception("Failed to add {}: {}".format(src, err))
 
         # Add resources listed in the manifest.
         for dst, src in manifest['resources'].iteritems():
@@ -192,8 +224,8 @@ def main():
         for req in manifest.get('prebuiltLibraries', []):
             try:
                 pex_builder.add_dist_location(req)
-            except Exception as e:
-                raise Exception("Failed to add {}: {}".format(req, e))
+            except Exception as err:
+                raise Exception("Failed to add {}: {}".format(req, err))
 
         # TODO(mikekap): Do something about manifest['nativeLibraries'].
 
@@ -206,4 +238,3 @@ def main():
 
 
 sys.exit(main())
-

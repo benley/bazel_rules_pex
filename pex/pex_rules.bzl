@@ -14,12 +14,14 @@
 
 # Derived from https://github.com/twitter/heron/blob/master/tools/rules/pex_rules.bzl
 
+"""Python pex rules for Bazel"""
+
 pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
 pex_test_file_types = FileType(["_unittest.py", "_test.py"])
 
 
-def collect_transitive_sources(ctx):
+def _collect_transitive_sources(ctx):
   source_files = set(order="compile")
   for dep in ctx.attr.deps + ctx.attr._extradeps:
     source_files += dep.py.transitive_sources
@@ -27,7 +29,7 @@ def collect_transitive_sources(ctx):
   return source_files
 
 
-def collect_transitive_eggs(ctx):
+def _collect_transitive_eggs(ctx):
   transitive_eggs = set(order="compile")
   for dep in ctx.attr.deps + ctx.attr._extradeps:
     if hasattr(dep.py, "transitive_egg_files"):
@@ -36,7 +38,7 @@ def collect_transitive_eggs(ctx):
   return transitive_eggs
 
 
-def collect_transitive_reqs(ctx):
+def _collect_transitive_reqs(ctx):
   transitive_reqs = set(order="compile")
   for dep in ctx.attr.deps + ctx.attr._extradeps:
     if hasattr(dep.py, "transitive_reqs"):
@@ -45,7 +47,7 @@ def collect_transitive_reqs(ctx):
   return transitive_reqs
 
 
-def collect_transitive_data(ctx):
+def _collect_transitive_data(ctx):
   transitive_data = set(order="compile")
   for dep in ctx.attr.deps + ctx.attr._extradeps:
     if hasattr(dep.py, "transitive_data_files"):
@@ -54,11 +56,11 @@ def collect_transitive_data(ctx):
   return transitive_data
 
 
-def pex_library_impl(ctx):
-  transitive_sources = collect_transitive_sources(ctx)
-  transitive_eggs = collect_transitive_eggs(ctx)
-  transitive_reqs = collect_transitive_reqs(ctx)
-  transitive_data = collect_transitive_data(ctx)
+def _pex_library_impl(ctx):
+  transitive_sources = _collect_transitive_sources(ctx)
+  transitive_eggs = _collect_transitive_eggs(ctx)
+  transitive_reqs = _collect_transitive_reqs(ctx)
+  transitive_data = _collect_transitive_data(ctx)
   return struct(
       files = set(),
       py = struct(
@@ -70,26 +72,26 @@ def pex_library_impl(ctx):
 
 
 # Converts map to text format. Each file on separate line.
-def textify_pex_input(input_map):
+def _textify_pex_input(input_map):
   kv_pairs = ['\t%s:%s' % (pkg, input_map[pkg]) for pkg in input_map.keys()]
   return '\n'.join(kv_pairs)
 
 
-def write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
+def _write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
   return '\n'.join(
-      ['modules:\n%s' % textify_pex_input(modules),
-       'requirements:\n%s' % textify_pex_input(dict(zip(requirements,requirements))),
-       'resources:\n%s' % textify_pex_input(resources),
+      ['modules:\n%s' % _textify_pex_input(modules),
+       'requirements:\n%s' % _textify_pex_input(dict(zip(requirements,requirements))),
+       'resources:\n%s' % _textify_pex_input(resources),
        'nativeLibraries:\n',
-       'prebuiltLibraries:\n%s' % textify_pex_input(prebuilt_libs)
+       'prebuiltLibraries:\n%s' % _textify_pex_input(prebuilt_libs)
       ])
 
 
-def make_manifest(ctx, output):
-  transitive_sources = collect_transitive_sources(ctx)
-  transitive_reqs = collect_transitive_reqs(ctx)
-  transitive_eggs = collect_transitive_eggs(ctx)
-  transitive_data = collect_transitive_data(ctx)
+def _make_manifest(ctx, output):
+  transitive_sources = _collect_transitive_sources(ctx)
+  transitive_reqs = _collect_transitive_reqs(ctx)
+  transitive_eggs = _collect_transitive_eggs(ctx)
+  transitive_data = _collect_transitive_data(ctx)
   pex_modules = {}
   pex_prebuilt_libs = {}
   pex_resources = {}
@@ -103,20 +105,20 @@ def make_manifest(ctx, output):
   for f in transitive_data:
     pex_resources[f.short_path] = f.path
 
-  manifest_text = write_pex_manifest_text(pex_modules,
-                                          pex_prebuilt_libs,
-                                          pex_resources,
-                                          transitive_reqs)
+  manifest_text = _write_pex_manifest_text(pex_modules,
+                                           pex_prebuilt_libs,
+                                           pex_resources,
+                                           transitive_reqs)
   ctx.file_action(
       output = output,
       content = manifest_text)
 
 
-def common_pex_arguments(entry_point, deploy_pex_path, manifest_file_path):
+def _common_pex_arguments(entry_point, deploy_pex_path, manifest_file_path):
   return ['--entry-point', entry_point, deploy_pex_path, manifest_file_path]
 
 
-def pex_binary_impl(ctx):
+def _pex_binary_impl(ctx):
   if not ctx.file.main:
     main_file = pex_file_types.filter(ctx.files.srcs)[0]
   else:
@@ -130,19 +132,19 @@ def pex_binary_impl(ctx):
 
   manifest_file = ctx.new_file(
       ctx.configuration.bin_dir, deploy_pex, '.manifest')
-  make_manifest(ctx, manifest_file)
+  _make_manifest(ctx, manifest_file)
 
-  transitive_sources = collect_transitive_sources(ctx)
-  transitive_eggs = collect_transitive_eggs(ctx)
-  transitive_data = collect_transitive_data(ctx)
+  transitive_sources = _collect_transitive_sources(ctx)
+  transitive_eggs = _collect_transitive_eggs(ctx)
+  transitive_data = _collect_transitive_data(ctx)
   pexbuilder = ctx.executable._pexbuilder
 
   # form the arguments to pex builder
   arguments =  [] if ctx.attr.zip_safe else ["--not-zip-safe"]
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
-  arguments += common_pex_arguments(main_pkg,
-                                    deploy_pex.path,
-                                    manifest_file.path)
+  arguments += _common_pex_arguments(main_pkg,
+                                     deploy_pex.path,
+                                     manifest_file.path)
 
   # form the inputs to pex builder
   _inputs = (
@@ -171,17 +173,17 @@ def pex_binary_impl(ctx):
                 #runfiles = ctx.runfiles(transitive_files = set(_inputs)))
 
 
-def pex_pytest_impl(ctx):
+def _pex_pytest_impl(ctx):
   deploy_pex = ctx.new_file(
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
 
   manifest_file = ctx.new_file(
       ctx.configuration.bin_dir, deploy_pex, '.manifest')
-  make_manifest(ctx, manifest_file)
+  _make_manifest(ctx, manifest_file)
 
   # Get pex test files
-  transitive_sources = collect_transitive_sources(ctx)
-  transitive_eggs = collect_transitive_eggs(ctx)
+  transitive_sources = _collect_transitive_sources(ctx)
+  transitive_eggs = _collect_transitive_eggs(ctx)
   transitive_resources = ctx.files.data
   pexbuilder = ctx.executable._pexbuilder
 
@@ -202,9 +204,9 @@ def pex_pytest_impl(ctx):
       executable = pexbuilder,
       outputs = [ deploy_pex ],
       mnemonic = "PexPython",
-      arguments = common_pex_arguments('pytest',
-                                       deploy_pex.path,
-                                       manifest_file.path))
+      arguments = _common_pex_arguments('pytest',
+                                        deploy_pex.path,
+                                        manifest_file.path))
 
   executable = ctx.outputs.executable
   ctx.file_action(
@@ -238,7 +240,16 @@ pex_attrs = {
                                   allow_files = False),
 }
 
-pex_bin_attrs = pex_attrs + {
+
+def _dmerge(a, b):
+  """Merge two dictionaries, a+b
+
+  Workaround for https://github.com/bazelbuild/skydoc/issues/10
+  """
+  return dict(a.items() + b.items())
+
+
+pex_bin_attrs = _dmerge(pex_attrs, {
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,
@@ -246,12 +257,12 @@ pex_bin_attrs = pex_attrs + {
     "_pexbuilder": attr.label(
         default = Label("//third_party/py/pex:pex_wrapper"),
         allow_files = False,
-        executable = True,
-    )
-}
+        executable = True
+    ),
+})
 
 pex_library = rule(
-    pex_library_impl,
+    _pex_library_impl,
     attrs = pex_attrs
 )
 
@@ -260,14 +271,14 @@ pex_binary_outputs = {
 }
 
 pex_binary = rule(
-    pex_binary_impl,
+    _pex_binary_impl,
     executable = True,
     attrs = pex_bin_attrs,
     outputs = pex_binary_outputs,
 )
 
 pex_test = rule(
-    pex_binary_impl,
+    _pex_binary_impl,
     executable = True,
     attrs = pex_bin_attrs,
     outputs = pex_binary_outputs,
@@ -275,9 +286,9 @@ pex_test = rule(
 )
 
 pytest_pex_test = rule(
-    pex_pytest_impl,
+    _pex_pytest_impl,
     executable = True,
-    attrs = pex_attrs + {
+    attrs = _dmerge(pex_attrs, {
         "_pexbuilder": attr.label(
             default = Label("//third_party/py/pex:pex_wrapper"),
             allow_files = False,
@@ -288,13 +299,13 @@ pytest_pex_test = rule(
                 Label('//third_party/py/pytest')
             ],
         ),
-    },
+    }),
     test = True,
 )
 
 
 def pex_repositories():
-  """Rules to be invoked from the root WORKSPACE for remote dependencies."""
+  """Rules to be invoked from WORKSPACE for remote dependencies."""
   native.http_file(
       name = 'pytest_whl',
       url = 'https://pypi.python.org/packages/24/05/b6eaf80746a2819327207825e3dd207a93d02a9f63e01ce48562c143ed82/pytest-2.9.2-py2.py3-none-any.whl',

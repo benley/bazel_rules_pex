@@ -1,0 +1,14 @@
+# vim: set ft=bzl
+
+load(
+    "@io_bazel_skydoc//skylark:skylark.bzl",
+    "skydoc_repositories",
+    "skylark_library",
+    "skylark_doc",
+)
+
+load(
+    "@//pex:pex_rules.bzl",
+    "pex_binary",
+    "pex_library",
+)

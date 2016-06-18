@@ -2,8 +2,6 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("//:pex_rules.bzl", "pex_binary", "pex_library")
-
 py_binary(
     name = "pex_wrapper",
     srcs = ["pex_wrapper.py"],

@@ -30,8 +30,11 @@ if not zipfile.is_zipfile(sys.argv[0]):
     BAZEL_ROOT = os.sep.join(__file__.split(os.sep)[:-4])
     sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/py/pex'))
     sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/setuptools'))
-    PKG_RESOURCES_PY = os.path.join(BAZEL_ROOT, PKG_RESOURCES_PATH)
+
     WHEEL_PATH = os.path.join(BAZEL_ROOT, WHEEL_PATH)
+    SETUPTOOLS_PATH = os.path.join(BAZEL_ROOT, SETUPTOOLS_PATH)
+    PKG_RESOURCES_PATH = os.path.join(BAZEL_ROOT, PKG_RESOURCES_PATH)
+
     sys.path.insert(0, WHEEL_PATH)
 
 # Otherwise, we're running from a PEX, so extract pkg_resources via a resource.
@@ -41,7 +44,7 @@ else:
     pkg_resources_py_tmp.write(
         pkg_resources.resource_string(__name__, PKG_RESOURCES_PATH))
     pkg_resources_py_tmp.flush()
-    PKG_RESOURCES_PY = pkg_resources_py_tmp.name
+    PKG_RESOURCES_PATH = pkg_resources_py_tmp.name
 
     sys.path.insert(0, os.path.dirname(__file__))
 
@@ -203,7 +206,7 @@ def main():
         pex_builder.info.entry_point = options.entry_point
 
         pex_builder.add_source(
-            dereference_symlinks(PKG_RESOURCES_PY),
+            dereference_symlinks(PKG_RESOURCES_PATH),
             os.path.join(pex_builder.BOOTSTRAP_DIR, 'pkg_resources.py'))
 
         # Add the sources listed in the manifest.

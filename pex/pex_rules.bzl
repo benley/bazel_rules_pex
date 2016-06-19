@@ -23,7 +23,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.1",
+        tag = "0.1.2",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -83,9 +83,9 @@ def _collect_transitive_data(ctx):
 def _collect_transitive(ctx):
   return struct(
       transitive_sources = _collect_transitive_sources(ctx),
-      transitive_eggs = _collect_transitive_eggs(ctx),
+      transitive_egg_files = _collect_transitive_eggs(ctx),
       transitive_reqs = _collect_transitive_reqs(ctx),
-      transitive_data = _collect_transitive_data(ctx),
+      transitive_data_files = _collect_transitive_data(ctx),
   )
 
 
@@ -121,10 +121,10 @@ def _make_manifest(ctx, output):
   for f in py.transitive_sources:
     pex_modules[f.short_path] = f.path
 
-  for f in py.transitive_eggs:
+  for f in py.transitive_egg_files:
     pex_prebuilt_libs[f.path] = f.path
 
-  for f in py.transitive_data:
+  for f in py.transitive_data_files:
     pex_resources[f.short_path] = f.path
 
   manifest_text = _write_pex_manifest_text(pex_modules,
@@ -171,8 +171,8 @@ def _pex_binary_impl(ctx):
   _inputs = (
       [main_file, manifest_file] +
       list(py.transitive_sources) +
-      list(py.transitive_eggs) +
-      list(py.transitive_data) +
+      list(py.transitive_egg_files) +
+      list(py.transitive_data_files) +
       list(ctx.attr._pexbuilder.data_runfiles.files))
 
   ctx.action(
@@ -182,6 +182,8 @@ def _pex_binary_impl(ctx):
       executable = pexbuilder,
       arguments = arguments)
 
+  # TODO(benley): what's the point of the separate deploy pex if it's just a
+  #               duplicate of the executable?
   executable = ctx.outputs.executable
   ctx.action(
       inputs = [deploy_pex],
@@ -189,9 +191,10 @@ def _pex_binary_impl(ctx):
       command = "cp %s %s" % (deploy_pex.path, executable.path))
 
   # TODO(benley): is there any real benefit from including all the
-  # transitive runfiles?
-  return struct(files = set([executable]))#,
-                #runfiles = ctx.runfiles(transitive_files = set(_inputs)))
+  #               transitive runfiles?
+  return struct(files = set([executable]),
+                runfiles = ctx.runfiles(transitive_files = set(_inputs))
+                )
 
 
 def _pex_pytest_impl(ctx):
@@ -214,8 +217,8 @@ def _pex_pytest_impl(ctx):
   _inputs = (
       [manifest_file] +
       list(py.transitive_sources) +
-      list(py.transitive_eggs) +
-      list(py.transitive_data) +
+      list(py.transitive_egg_files) +
+      list(py.transitive_data_files) +
       list(ctx.attr._pexbuilder.data_runfiles.files)
   )
   ctx.action(

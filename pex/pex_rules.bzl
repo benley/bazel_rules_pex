@@ -215,7 +215,7 @@ def _pex_pytest_impl(ctx):
       [manifest_file] +
       list(py.transitive_sources) +
       list(py.transitive_eggs) +
-      list(py.transitive_resources) +
+      list(py.transitive_data) +
       list(ctx.attr._pexbuilder.data_runfiles.files)
   )
   ctx.action(

@@ -7,3 +7,8 @@ pex_library(
     eggs = ["//external:wheel/pytest"],
     deps = ["//third_party/py/py"],
 )
+
+pex_binary(
+    name = "runner",
+    deps = [":pytest"],
+    entrypoint = "pytest")

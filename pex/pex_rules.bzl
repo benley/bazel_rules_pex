@@ -141,13 +141,18 @@ def _common_pex_arguments(entry_point, deploy_pex_path, manifest_file_path):
 
 
 def _pex_binary_impl(ctx):
-  if not ctx.file.main:
-    main_file = pex_file_types.filter(ctx.files.srcs)[0]
-  else:
+  if ctx.attr.entrypoint and ctx.file.main:
+    fail("Please specify either entrypoint or main, not both.")
+  if ctx.attr.entrypoint:
+    main_file = None
+    main_pkg = ctx.attr.entrypoint
+  elif ctx.file.main:
     main_file = ctx.file.main
-
-  # Package name is same as folder name followed by filename (without .py extension)
-  main_pkg = main_file.path.replace('/', '.')[:-3]
+  else:
+    main_file = pex_file_types.filter(ctx.files.srcs)[0]
+  if main_file:
+    # Package name is same as folder name followed by filename (without .py extension)
+    main_pkg = main_file.path.replace('/', '.')[:-3]
 
   deploy_pex = ctx.new_file(
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
@@ -169,11 +174,13 @@ def _pex_binary_impl(ctx):
 
   # form the inputs to pex builder
   _inputs = (
-      [main_file, manifest_file] +
+      [manifest_file] +
       list(py.transitive_sources) +
       list(py.transitive_egg_files) +
       list(py.transitive_data_files) +
       list(ctx.attr._pexbuilder.data_runfiles.files))
+  if main_file:
+    _inputs.append(main_file)
 
   ctx.action(
       mnemonic = "PexPython",
@@ -190,10 +197,9 @@ def _pex_binary_impl(ctx):
       outputs = [executable],
       command = "cp %s %s" % (deploy_pex.path, executable.path))
 
-  # TODO(benley): is there any real benefit from including all the
-  #               transitive runfiles?
+  # TODO(benley): is there any reason to generate/include transitive runfiles?
   return struct(files = set([executable]),
-                runfiles = ctx.runfiles(transitive_files = set(_inputs))
+                #runfiles = ctx.runfiles(transitive_files = set(_inputs))
                 )
 
 
@@ -272,6 +278,7 @@ def _dmerge(a, b):
 
 
 pex_bin_attrs = _dmerge(pex_attrs, {
+    "entrypoint": attr.string(),
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,

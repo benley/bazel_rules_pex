@@ -57,7 +57,7 @@ Rules to be invoked from WORKSPACE for remote dependencies.
 ## pex_binary
 
 <pre>
-pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
+pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
 </pre>
 
 
@@ -105,6 +105,13 @@ pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps<
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_binary.entrypoint">
+      <td><code>entrypoint</code></td>
+      <td>
+        <p><code>String; Optional</code></p>
         
       </td>
     </tr>
@@ -220,7 +227,7 @@ pex_library(<a href="#pex_library.name">name</a>, <a href="#pex_library.deps">de
 ## pex_test
 
 <pre>
-pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
+pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.entrypoint">entrypoint</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
 </pre>
 
 
@@ -268,6 +275,13 @@ pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_test.entrypoint">
+      <td><code>entrypoint</code></td>
+      <td>
+        <p><code>String; Optional</code></p>
         
       </td>
     </tr>

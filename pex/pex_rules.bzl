@@ -80,19 +80,20 @@ def _collect_transitive_data(ctx):
   return transitive_data
 
 
+def _collect_transitive(ctx):
+  return struct(
+      transitive_sources = _collect_transitive_sources(ctx),
+      transitive_eggs = _collect_transitive_eggs(ctx),
+      transitive_reqs = _collect_transitive_reqs(ctx),
+      transitive_data = _collect_transitive_data(ctx),
+  )
+
+
 def _pex_library_impl(ctx):
-  transitive_sources = _collect_transitive_sources(ctx)
-  transitive_eggs = _collect_transitive_eggs(ctx)
-  transitive_reqs = _collect_transitive_reqs(ctx)
-  transitive_data = _collect_transitive_data(ctx)
   return struct(
       files = set(),
-      py = struct(
-          transitive_sources = transitive_sources,
-          transitive_reqs = transitive_reqs,
-          transitive_egg_files = transitive_eggs,
-          transitive_data_files = transitive_data,
-      ))
+      py = _collect_transitive(ctx),
+  )
 
 
 def _textify_pex_input(input_map):
@@ -112,27 +113,24 @@ def _write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
 
 
 def _make_manifest(ctx, output):
-  transitive_sources = _collect_transitive_sources(ctx)
-  transitive_reqs = _collect_transitive_reqs(ctx)
-  transitive_eggs = _collect_transitive_eggs(ctx)
-  transitive_data = _collect_transitive_data(ctx)
+  py = _collect_transitive(ctx)
   pex_modules = {}
   pex_prebuilt_libs = {}
   pex_resources = {}
   pex_requirements = []
-  for f in transitive_sources:
+  for f in py.transitive_sources:
     pex_modules[f.short_path] = f.path
 
-  for f in transitive_eggs:
+  for f in py.transitive_eggs:
     pex_prebuilt_libs[f.path] = f.path
 
-  for f in transitive_data:
+  for f in py.transitive_data:
     pex_resources[f.short_path] = f.path
 
   manifest_text = _write_pex_manifest_text(pex_modules,
                                            pex_prebuilt_libs,
                                            pex_resources,
-                                           transitive_reqs)
+                                           py.transitive_reqs)
   ctx.file_action(
       output = output,
       content = manifest_text)
@@ -158,9 +156,8 @@ def _pex_binary_impl(ctx):
       ctx.configuration.bin_dir, deploy_pex, '.manifest')
   _make_manifest(ctx, manifest_file)
 
-  transitive_sources = _collect_transitive_sources(ctx)
-  transitive_eggs = _collect_transitive_eggs(ctx)
-  transitive_data = _collect_transitive_data(ctx)
+  py = _collect_transitive(ctx)
+
   pexbuilder = ctx.executable._pexbuilder
 
   # form the arguments to pex builder
@@ -173,9 +170,9 @@ def _pex_binary_impl(ctx):
   # form the inputs to pex builder
   _inputs = (
       [main_file, manifest_file] +
-      list(transitive_sources) +
-      list(transitive_eggs) +
-      list(transitive_data) +
+      list(py.transitive_sources) +
+      list(py.transitive_eggs) +
+      list(py.transitive_data) +
       list(ctx.attr._pexbuilder.data_runfiles.files))
 
   ctx.action(
@@ -206,9 +203,7 @@ def _pex_pytest_impl(ctx):
   _make_manifest(ctx, manifest_file)
 
   # Get pex test files
-  transitive_sources = _collect_transitive_sources(ctx)
-  transitive_eggs = _collect_transitive_eggs(ctx)
-  transitive_resources = ctx.files.data
+  py = _collect_transitive(ctx)
   pexbuilder = ctx.executable._pexbuilder
 
   pex_test_files = pex_file_types.filter(ctx.files.srcs)
@@ -218,9 +213,9 @@ def _pex_pytest_impl(ctx):
 
   _inputs = (
       [manifest_file] +
-      list(transitive_sources) +
-      list(transitive_eggs) +
-      list(transitive_resources) +
+      list(py.transitive_sources) +
+      list(py.transitive_eggs) +
+      list(py.transitive_resources) +
       list(ctx.attr._pexbuilder.data_runfiles.files)
   )
   ctx.action(

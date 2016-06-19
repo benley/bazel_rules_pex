@@ -25,18 +25,18 @@ Add something like this to your WORKSPACE file:
         remote = "https://github.com/benley/bazel_rules_pex.git",
         tag = "0.1",
     )
-    load("@io_bazel_rules_pex//pex:pex.bzl", "pex_repositories")
+    load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
 
 In a BUILD file where you want to use these rules, or in your
 `tools/build_rules/prelude_bazel` file if you want them present repo-wide, add:
 
     load(
-        "@io_bazel_rules_pex//pex:pex.bzl",
+        "@io_bazel_rules_pex//pex:pex_rules.bzl",
         "pex_binary",
         "pex_library",
         "pex_test",
-        "pex_pytest_test",
+        "pytest_pex_test",
     )
 """
 

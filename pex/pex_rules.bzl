@@ -261,9 +261,6 @@ pex_attrs = {
     "reqs": attr.string_list(),
     "data": attr.label_list(allow_files = True,
                             cfg = DATA_CFG),
-    "main": attr.label(allow_files = True,
-                       single_file = True),
-    "pex_use_wheels": attr.bool(default=True),
     "_extradeps": attr.label_list(providers = ["py"],
                                   allow_files = False),
 }
@@ -278,7 +275,10 @@ def _dmerge(a, b):
 
 
 pex_bin_attrs = _dmerge(pex_attrs, {
+    "main": attr.label(allow_files = True,
+                       single_file = True),
     "entrypoint": attr.string(),
+    "pex_use_wheels": attr.bool(default=True),
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,
@@ -305,6 +305,37 @@ pex_binary = rule(
     attrs = pex_bin_attrs,
     outputs = pex_binary_outputs,
 )
+"""Build a deployable pex executable.
+
+Args:
+  deps: Python module dependencies.
+
+        `pex_library` and `py_library` rules should work here.
+
+  eggs: `.egg` and `.whl` files to include as python packages.
+
+  reqs: External requirements to retrieve from pypi, in `requirements.txt` format.
+
+    This feature will not work with build sandboxing enabled! It is
+    recommended that you use `eggs` instead.
+
+  data: Files to include as resources in the final pex binary.
+
+    Putting other rules here will cause the *outputs* of those rules to be
+    embedded in this one. Files will be included as-is. Paths in the archive
+    will be relative to the workspace root.
+
+  main: File to use as the entrypoint.
+
+    If unspecified, the first file from the `srcs` attribute will be used.
+
+  entrypoint: Name of a python module to use as the entrypoint.
+
+    e.g. `your.project.main`
+
+    If unspecified, the `main` attribute will be used.
+    It is an error to specify both main and entrypoint.
+"""
 
 pex_test = rule(
     _pex_binary_impl,

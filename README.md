@@ -60,7 +60,7 @@ Rules to be invoked from WORKSPACE for remote dependencies.
 pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
 </pre>
 
-
+Build a deployable pex executable.
 
 
 <a name="pex_binary_args"></a>
@@ -84,14 +84,18 @@ pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps<
       <td><code>deps</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Python module dependencies.</p>
+<p><code>pex_library</code> and <code>py_library</code> rules should work here.</p>
       </td>
     </tr>
     <tr id="pex_binary.data">
       <td><code>data</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Files to include as resources in the final pex binary.</p>
+<p>Putting other rules here will cause the <em>outputs</em> of those rules to be
+embedded in this one. Files will be included as-is. Paths in the archive
+will be relative to the workspace root.</p>
       </td>
     </tr>
     <tr id="pex_binary.srcs">
@@ -105,21 +109,25 @@ pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps<
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p><code>.egg</code> and <code>.whl</code> files to include as python packages.</p>
       </td>
     </tr>
     <tr id="pex_binary.entrypoint">
       <td><code>entrypoint</code></td>
       <td>
         <p><code>String; Optional</code></p>
-        
+        <p>Name of a python module to use as the entrypoint.</p>
+<p>e.g. <code>your.project.main</code></p>
+<p>If unspecified, the <code>main</code> attribute will be used.
+It is an error to specify both main and entrypoint.</p>
       </td>
     </tr>
     <tr id="pex_binary.main">
       <td><code>main</code></td>
       <td>
         <p><code><a href="http://bazel.io/docs/build-ref.html#labels">Label</a>; Optional</code></p>
-        
+        <p>File to use as the entrypoint.</p>
+<p>If unspecified, the first file from the <code>srcs</code> attribute will be used.</p>
       </td>
     </tr>
     <tr id="pex_binary.pex_use_wheels">
@@ -133,7 +141,9 @@ pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps<
       <td><code>reqs</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
+        <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
+<p>This feature will not work with build sandboxing enabled! It is
+recommended that you use <code>eggs</code> instead.</p>
       </td>
     </tr>
     <tr id="pex_binary.zip_safe">
@@ -149,7 +159,7 @@ pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps<
 ## pex_library
 
 <pre>
-pex_library(<a href="#pex_library.name">name</a>, <a href="#pex_library.deps">deps</a>, <a href="#pex_library.data">data</a>, <a href="#pex_library.srcs">srcs</a>, <a href="#pex_library.eggs">eggs</a>, <a href="#pex_library.main">main</a>, <a href="#pex_library.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_library.reqs">reqs</a>)
+pex_library(<a href="#pex_library.name">name</a>, <a href="#pex_library.deps">deps</a>, <a href="#pex_library.data">data</a>, <a href="#pex_library.srcs">srcs</a>, <a href="#pex_library.eggs">eggs</a>, <a href="#pex_library.reqs">reqs</a>)
 </pre>
 
 
@@ -176,14 +186,18 @@ pex_library(<a href="#pex_library.name">name</a>, <a href="#pex_library.deps">de
       <td><code>deps</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Python module dependencies.</p>
+<p><code>pex_library</code> and <code>py_library</code> rules should work here.</p>
       </td>
     </tr>
     <tr id="pex_library.data">
       <td><code>data</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Files to include as resources in the final pex binary.</p>
+<p>Putting other rules here will cause the <em>outputs</em> of those rules to be
+embedded in this one. Files will be included as-is. Paths in the archive
+will be relative to the workspace root.</p>
       </td>
     </tr>
     <tr id="pex_library.srcs">
@@ -197,28 +211,16 @@ pex_library(<a href="#pex_library.name">name</a>, <a href="#pex_library.deps">de
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
-      </td>
-    </tr>
-    <tr id="pex_library.main">
-      <td><code>main</code></td>
-      <td>
-        <p><code><a href="http://bazel.io/docs/build-ref.html#labels">Label</a>; Optional</code></p>
-        
-      </td>
-    </tr>
-    <tr id="pex_library.pex_use_wheels">
-      <td><code>pex_use_wheels</code></td>
-      <td>
-        <p><code>Boolean; Optional</code></p>
-        
+        <p><code>.egg</code> and <code>.whl</code> files to include as python packages.</p>
       </td>
     </tr>
     <tr id="pex_library.reqs">
       <td><code>reqs</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
+        <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
+<p>This feature will not work with build sandboxing enabled! It is
+recommended that you use <code>eggs</code> instead.</p>
       </td>
     </tr>
   </tbody>
@@ -254,14 +256,18 @@ pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <
       <td><code>deps</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Python module dependencies.</p>
+<p><code>pex_library</code> and <code>py_library</code> rules should work here.</p>
       </td>
     </tr>
     <tr id="pex_test.data">
       <td><code>data</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Files to include as resources in the final pex binary.</p>
+<p>Putting other rules here will cause the <em>outputs</em> of those rules to be
+embedded in this one. Files will be included as-is. Paths in the archive
+will be relative to the workspace root.</p>
       </td>
     </tr>
     <tr id="pex_test.srcs">
@@ -275,21 +281,25 @@ pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p><code>.egg</code> and <code>.whl</code> files to include as python packages.</p>
       </td>
     </tr>
     <tr id="pex_test.entrypoint">
       <td><code>entrypoint</code></td>
       <td>
         <p><code>String; Optional</code></p>
-        
+        <p>Name of a python module to use as the entrypoint.</p>
+<p>e.g. <code>your.project.main</code></p>
+<p>If unspecified, the <code>main</code> attribute will be used.
+It is an error to specify both main and entrypoint.</p>
       </td>
     </tr>
     <tr id="pex_test.main">
       <td><code>main</code></td>
       <td>
         <p><code><a href="http://bazel.io/docs/build-ref.html#labels">Label</a>; Optional</code></p>
-        
+        <p>File to use as the entrypoint.</p>
+<p>If unspecified, the first file from the <code>srcs</code> attribute will be used.</p>
       </td>
     </tr>
     <tr id="pex_test.pex_use_wheels">
@@ -303,7 +313,9 @@ pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <
       <td><code>reqs</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
+        <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
+<p>This feature will not work with build sandboxing enabled! It is
+recommended that you use <code>eggs</code> instead.</p>
       </td>
     </tr>
     <tr id="pex_test.zip_safe">
@@ -319,7 +331,7 @@ pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <
 ## pytest_pex_test
 
 <pre>
-pytest_pex_test(<a href="#pytest_pex_test.name">name</a>, <a href="#pytest_pex_test.deps">deps</a>, <a href="#pytest_pex_test.data">data</a>, <a href="#pytest_pex_test.srcs">srcs</a>, <a href="#pytest_pex_test.eggs">eggs</a>, <a href="#pytest_pex_test.main">main</a>, <a href="#pytest_pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pytest_pex_test.reqs">reqs</a>)
+pytest_pex_test(<a href="#pytest_pex_test.name">name</a>, <a href="#pytest_pex_test.deps">deps</a>, <a href="#pytest_pex_test.data">data</a>, <a href="#pytest_pex_test.srcs">srcs</a>, <a href="#pytest_pex_test.eggs">eggs</a>, <a href="#pytest_pex_test.reqs">reqs</a>)
 </pre>
 
 
@@ -346,14 +358,18 @@ pytest_pex_test(<a href="#pytest_pex_test.name">name</a>, <a href="#pytest_pex_t
       <td><code>deps</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Python module dependencies.</p>
+<p><code>pex_library</code> and <code>py_library</code> rules should work here.</p>
       </td>
     </tr>
     <tr id="pytest_pex_test.data">
       <td><code>data</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
+        <p>Files to include as resources in the final pex binary.</p>
+<p>Putting other rules here will cause the <em>outputs</em> of those rules to be
+embedded in this one. Files will be included as-is. Paths in the archive
+will be relative to the workspace root.</p>
       </td>
     </tr>
     <tr id="pytest_pex_test.srcs">
@@ -367,28 +383,16 @@ pytest_pex_test(<a href="#pytest_pex_test.name">name</a>, <a href="#pytest_pex_t
       <td><code>eggs</code></td>
       <td>
         <p><code>List of <a href="http://bazel.io/docs/build-ref.html#labels">labels</a>; Optional</code></p>
-        
-      </td>
-    </tr>
-    <tr id="pytest_pex_test.main">
-      <td><code>main</code></td>
-      <td>
-        <p><code><a href="http://bazel.io/docs/build-ref.html#labels">Label</a>; Optional</code></p>
-        
-      </td>
-    </tr>
-    <tr id="pytest_pex_test.pex_use_wheels">
-      <td><code>pex_use_wheels</code></td>
-      <td>
-        <p><code>Boolean; Optional</code></p>
-        
+        <p><code>.egg</code> and <code>.whl</code> files to include as python packages.</p>
       </td>
     </tr>
     <tr id="pytest_pex_test.reqs">
       <td><code>reqs</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
+        <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
+<p>This feature will not work with build sandboxing enabled! It is
+recommended that you use <code>eggs</code> instead.</p>
       </td>
     </tr>
   </tbody>

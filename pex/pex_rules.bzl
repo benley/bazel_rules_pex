@@ -23,7 +23,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.3",
+        tag = "0.1.4",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -151,8 +151,8 @@ def _pex_binary_impl(ctx):
   else:
     main_file = pex_file_types.filter(ctx.files.srcs)[0]
   if main_file:
-    # Package name is same as folder name followed by filename (without .py extension)
-    main_pkg = main_file.path.replace('/', '.')[:-3]
+    # Translate main_file's short path into a python module name
+    main_pkg = main_file.short_path.replace('/', '.')[:-3]
 
   deploy_pex = ctx.new_file(
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')

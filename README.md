@@ -142,8 +142,9 @@ It is an error to specify both main and entrypoint.</p>
       <td>
         <p><code>List of strings; Optional</code></p>
         <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
-<p>This feature will not work with build sandboxing enabled! It is
-recommended that you use <code>eggs</code> instead.</p>
+<p>This feature will reduce build determinism!  It tells pex to resolve all
+the transitive python dependencies and fetch them from pypi.</p>
+<p>It is recommended that you use <code>eggs</code> instead where possible.</p>
       </td>
     </tr>
     <tr id="pex_binary.zip_safe">
@@ -219,8 +220,9 @@ will be relative to the workspace root.</p>
       <td>
         <p><code>List of strings; Optional</code></p>
         <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
-<p>This feature will not work with build sandboxing enabled! It is
-recommended that you use <code>eggs</code> instead.</p>
+<p>This feature will reduce build determinism!  It tells pex to resolve all
+the transitive python dependencies and fetch them from pypi.</p>
+<p>It is recommended that you use <code>eggs</code> instead where possible.</p>
       </td>
     </tr>
   </tbody>
@@ -314,8 +316,9 @@ It is an error to specify both main and entrypoint.</p>
       <td>
         <p><code>List of strings; Optional</code></p>
         <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
-<p>This feature will not work with build sandboxing enabled! It is
-recommended that you use <code>eggs</code> instead.</p>
+<p>This feature will reduce build determinism!  It tells pex to resolve all
+the transitive python dependencies and fetch them from pypi.</p>
+<p>It is recommended that you use <code>eggs</code> instead where possible.</p>
       </td>
     </tr>
     <tr id="pex_test.zip_safe">
@@ -391,8 +394,9 @@ will be relative to the workspace root.</p>
       <td>
         <p><code>List of strings; Optional</code></p>
         <p>External requirements to retrieve from pypi, in <code>requirements.txt</code> format.</p>
-<p>This feature will not work with build sandboxing enabled! It is
-recommended that you use <code>eggs</code> instead.</p>
+<p>This feature will reduce build determinism!  It tells pex to resolve all
+the transitive python dependencies and fetch them from pypi.</p>
+<p>It is recommended that you use <code>eggs</code> instead where possible.</p>
       </td>
     </tr>
   </tbody>

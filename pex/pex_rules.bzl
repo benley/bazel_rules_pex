@@ -189,6 +189,9 @@ def _pex_binary_impl(ctx):
       inputs = _inputs,
       outputs = [deploy_pex],
       executable = pexbuilder,
+      execution_requirements = {
+          "requires-network": "1",
+      },
       env = {
           'SETUPTOOLS_PATH': ctx.file._setuptools.path,
           'WHEEL_PATH': ctx.file._wheel.path,
@@ -239,6 +242,9 @@ def _pex_pytest_impl(ctx):
       inputs = _inputs,
       outputs = [ deploy_pex ],
       executable = pexbuilder,
+      execution_requirements = {
+          "requires-network": "1",
+      },
       env = {
           'SETUPTOOLS_PATH': ctx.file._setuptools.path,
           'WHEEL_PATH': ctx.file._wheel.path,
@@ -338,8 +344,10 @@ Args:
 
   reqs: External requirements to retrieve from pypi, in `requirements.txt` format.
 
-    This feature will not work with build sandboxing enabled! It is
-    recommended that you use `eggs` instead.
+    This feature will reduce build determinism!  It tells pex to resolve all
+    the transitive python dependencies and fetch them from pypi.
+
+    It is recommended that you use `eggs` instead where possible.
 
   data: Files to include as resources in the final pex binary.
 

@@ -13,9 +13,11 @@ import sys
 import tempfile
 import zipfile
 
-# Relative to workspace root:
-WHEEL_PATH = 'third_party/py/pex/wheel-0.23.0-py2.7.egg'
-SETUPTOOLS_PATH = 'third_party/py/pex/setuptools-18.0.1-py2.py3-none-any.whl'
+WHEEL_PATH = os.getenv("WHEEL_PATH")
+SETUPTOOLS_PATH = os.getenv("SETUPTOOLS_PATH")
+sys.path.insert(0, WHEEL_PATH)
+sys.path.insert(0, SETUPTOOLS_PATH)
+
 PKG_RESOURCES_PATH = 'third_party/setuptools/pkg_resources.py'
 
 # Try to detect if we're running from source via the repo.  Add appropriate
@@ -31,11 +33,7 @@ if not zipfile.is_zipfile(sys.argv[0]):
     sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/py/pex'))
     sys.path.insert(0, os.path.join(BAZEL_ROOT, 'third_party/setuptools'))
 
-    WHEEL_PATH = os.path.join(BAZEL_ROOT, WHEEL_PATH)
-    SETUPTOOLS_PATH = os.path.join(BAZEL_ROOT, SETUPTOOLS_PATH)
     PKG_RESOURCES_PATH = os.path.join(BAZEL_ROOT, PKG_RESOURCES_PATH)
-
-    sys.path.insert(0, WHEEL_PATH)
 
 # Otherwise, we're running from a PEX, so extract pkg_resources via a resource.
 else:

@@ -187,6 +187,10 @@ def _pex_binary_impl(ctx):
       inputs = _inputs,
       outputs = [deploy_pex],
       executable = pexbuilder,
+      env = {
+          'SETUPTOOLS_PATH': ctx.file._setuptools.path,
+          'WHEEL_PATH': ctx.file._wheel.path,
+      },
       arguments = arguments)
 
   # TODO(benley): what's the point of the separate deploy pex if it's just a
@@ -228,10 +232,14 @@ def _pex_pytest_impl(ctx):
       list(ctx.attr._pexbuilder.data_runfiles.files)
   )
   ctx.action(
-      inputs = _inputs,
-      executable = pexbuilder,
-      outputs = [ deploy_pex ],
       mnemonic = "PexPython",
+      inputs = _inputs,
+      outputs = [ deploy_pex ],
+      executable = pexbuilder,
+      env = {
+          'SETUPTOOLS_PATH': ctx.file._setuptools.path,
+          'WHEEL_PATH': ctx.file._wheel.path,
+      },
       arguments = _common_pex_arguments('pytest',
                                         deploy_pex.path,
                                         manifest_file.path))
@@ -261,8 +269,24 @@ pex_attrs = {
     "reqs": attr.string_list(),
     "data": attr.label_list(allow_files = True,
                             cfg = DATA_CFG),
+
+    # From here down are used internally by pex_binary and pex_*test rules,
+    # not pex_library.
     "_extradeps": attr.label_list(providers = ["py"],
                                   allow_files = False),
+    "_pexbuilder": attr.label(
+        default = Label("//third_party/py/pex:pex_wrapper"),
+        allow_files = False,
+        executable = True
+    ),
+    "_wheel": attr.label(
+        default = Label("@wheel_whl//file"),
+        single_file = True,
+    ),
+    "_setuptools": attr.label(
+        default = Label("@setuptools_whl//file"),
+        single_file = True,
+    ),
 }
 
 
@@ -282,11 +306,6 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,
-    ),
-    "_pexbuilder": attr.label(
-        default = Label("//third_party/py/pex:pex_wrapper"),
-        allow_files = False,
-        executable = True
     ),
 })
 
@@ -310,7 +329,7 @@ pex_binary = rule(
 Args:
   deps: Python module dependencies.
 
-        `pex_library` and `py_library` rules should work here.
+    `pex_library` and `py_library` rules should work here.
 
   eggs: `.egg` and `.whl` files to include as python packages.
 
@@ -349,11 +368,6 @@ pytest_pex_test = rule(
     _pex_pytest_impl,
     executable = True,
     attrs = _dmerge(pex_attrs, {
-        "_pexbuilder": attr.label(
-            default = Label("//third_party/py/pex:pex_wrapper"),
-            allow_files = False,
-            executable = True,
-        ),
         '_extradeps': attr.label_list(
             default = [
                 Label('//third_party/py/pytest')
@@ -386,4 +400,16 @@ def pex_repositories():
   native.bind(
       name = "wheel/py",
       actual = "@py_whl//file",
+  )
+
+  native.http_file(
+      name = "wheel_whl",
+      url = "https://pypi.python.org/packages/a9/67/43036e2db1a344ad24ba468b6262826b3837ce629b7b4c09c18d3e2b5800/wheel-0.23.0-py2.py3-none-any.whl",
+      sha256 = "cbc6b2e274557b5e8ee8b61ca4c0c781702956a80cdbeb7ec0446834b5078082",
+  )
+
+  native.http_file(
+      name = "setuptools_whl",
+      url = "https://pypi.python.org/packages/00/d5/1233f051f7ce669a2009301aa75f1efbd97ccde6b60236997fd9111d5297/setuptools-18.0.1-py2.py3-none-any.whl",
+      sha256 = "825814864707c12e3eb7878c9d9cc7189507022d53476b71ef833b3d28df0c9c",
   )

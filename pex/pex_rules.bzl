@@ -178,7 +178,9 @@ def _pex_binary_impl(ctx):
       list(py.transitive_sources) +
       list(py.transitive_egg_files) +
       list(py.transitive_data_files) +
-      list(ctx.attr._pexbuilder.data_runfiles.files))
+      list(ctx.attr._pexbuilder.data_runfiles.files) +
+      [ctx.file._setuptools, ctx.file._wheel]
+  )
   if main_file:
     _inputs.append(main_file)
 
@@ -229,7 +231,8 @@ def _pex_pytest_impl(ctx):
       list(py.transitive_sources) +
       list(py.transitive_egg_files) +
       list(py.transitive_data_files) +
-      list(ctx.attr._pexbuilder.data_runfiles.files)
+      list(ctx.attr._pexbuilder.data_runfiles.files) +
+      [ctx.file._setuptools, ctx.file._wheel]
   )
   ctx.action(
       mnemonic = "PexPython",

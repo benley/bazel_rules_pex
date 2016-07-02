@@ -47,7 +47,7 @@ pex_test_file_types = FileType(["_unittest.py", "_test.py"])
 
 def _collect_transitive_sources(ctx):
   source_files = set(order="compile")
-  for dep in ctx.attr.deps + ctx.attr._extradeps:
+  for dep in ctx.attr.deps:
     source_files += dep.py.transitive_sources
   source_files += pex_file_types.filter(ctx.files.srcs)
   return source_files
@@ -55,7 +55,7 @@ def _collect_transitive_sources(ctx):
 
 def _collect_transitive_eggs(ctx):
   transitive_eggs = set(order="compile")
-  for dep in ctx.attr.deps + ctx.attr._extradeps:
+  for dep in ctx.attr.deps:
     if hasattr(dep.py, "transitive_egg_files"):
       transitive_eggs += dep.py.transitive_egg_files
   transitive_eggs += egg_file_types.filter(ctx.files.eggs)
@@ -64,7 +64,7 @@ def _collect_transitive_eggs(ctx):
 
 def _collect_transitive_reqs(ctx):
   transitive_reqs = set(order="compile")
-  for dep in ctx.attr.deps + ctx.attr._extradeps:
+  for dep in ctx.attr.deps:
     if hasattr(dep.py, "transitive_reqs"):
       transitive_reqs += dep.py.transitive_reqs
   transitive_reqs += ctx.attr.reqs
@@ -73,7 +73,7 @@ def _collect_transitive_reqs(ctx):
 
 def _collect_transitive_data(ctx):
   transitive_data = set(order="compile")
-  for dep in ctx.attr.deps + ctx.attr._extradeps:
+  for dep in ctx.attr.deps:
     if hasattr(dep.py, "transitive_data_files"):
       transitive_data += dep.py.transitive_data_files
   transitive_data += ctx.files.data
@@ -213,56 +213,25 @@ def _pex_binary_impl(ctx):
 
 
 def _pex_pytest_impl(ctx):
-  deploy_pex = ctx.new_file(
-      ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
-
-  manifest_file = ctx.new_file(
-      ctx.configuration.bin_dir, deploy_pex, '.manifest')
-  _make_manifest(ctx, manifest_file)
-
-  # Get pex test files
-  py = _collect_transitive(ctx)
-  pexbuilder = ctx.executable._pexbuilder
-
   pex_test_files = pex_file_types.filter(ctx.files.srcs)
+  test_runner = ctx.executable.runner
+
   # FIXME(benley): This will probably break on paths with spaces
   #                But you should also stop wanting that.
   test_run_args = ' '.join([f.path for f in pex_test_files])
 
-  _inputs = (
-      [manifest_file] +
-      list(py.transitive_sources) +
-      list(py.transitive_egg_files) +
-      list(py.transitive_data_files) +
-      list(ctx.attr._pexbuilder.data_runfiles.files) +
-      [ctx.file._setuptools, ctx.file._wheel]
-  )
-  ctx.action(
-      mnemonic = "PexPython",
-      inputs = _inputs,
-      outputs = [ deploy_pex ],
-      executable = pexbuilder,
-      execution_requirements = {
-          "requires-network": "1",
-      },
-      env = {
-          'SETUPTOOLS_PATH': ctx.file._setuptools.path,
-          'WHEEL_PATH': ctx.file._wheel.path,
-      },
-      arguments = _common_pex_arguments('pytest',
-                                        deploy_pex.path,
-                                        manifest_file.path))
-
   executable = ctx.outputs.executable
   ctx.file_action(
       output = executable,
-      content = ('PYTHONDONTWRITEBYTECODE=1 %s %s\n\n' %
-                 (deploy_pex.short_path, test_run_args)))
+      content = ('#!/bin/sh\nPYTHONDONTWRITEBYTECODE=1 %s %s\n\n' %
+                 (test_runner.short_path, test_run_args)))
+
+  _inputs = pex_test_files + [test_runner]
 
   return struct(
       files = set([executable]),
       runfiles = ctx.runfiles(
-          transitive_files = set(_inputs + [deploy_pex]),
+          transitive_files = set(_inputs),
           collect_default = True
       ),
   )
@@ -281,8 +250,6 @@ pex_attrs = {
 
     # From here down are used internally by pex_binary and pex_*test rules,
     # not pex_library.
-    "_extradeps": attr.label_list(providers = ["py"],
-                                  allow_files = False),
     "_pexbuilder": attr.label(
         default = Label("//third_party/py/pex:pex_wrapper"),
         allow_files = False,
@@ -375,18 +342,32 @@ pex_test = rule(
     test = True,
 )
 
-pytest_pex_test = rule(
+_pytest_pex_test = rule(
     _pex_pytest_impl,
     executable = True,
+    test = True,
     attrs = _dmerge(pex_attrs, {
-        '_extradeps': attr.label_list(
-            default = [
-                Label('//third_party/py/pytest')
-            ],
+        "runner": attr.label(
+            executable = True,
+            mandatory = True,
         ),
     }),
-    test = True,
 )
+
+
+def pytest_pex_test(name, srcs, deps=[], **kwargs):
+  pex_binary(
+      name = "%s_runner" % name,
+      srcs = srcs,
+      deps = deps + ["//third_party/py/pytest"],
+      entrypoint = "pytest",
+      **kwargs
+  )
+  _pytest_pex_test(
+      name = name,
+      runner = ":%s_runner" % name,
+      srcs = srcs,
+  )
 
 
 def pex_repositories():

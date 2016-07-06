@@ -28,7 +28,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.4",
+        tag = "0.1.5",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -41,21 +41,17 @@ In a BUILD file where you want to use these rules, or in your
         "pex_binary",
         "pex_library",
         "pex_test",
-        "pytest_pex_test",
+        "pex_pytest",
     )
 
 <a name="pex_pytest"></a>
 ## pex_pytest
 
 <pre>
-pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>)
+pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>, <a href="#pex_pytest.pytest_args">pytest_args</a>)
 </pre>
 
 A variant of pex_test that uses py.test to run one or more sets of tests.
-
-Almost all of the attributes that apply to pex_test work identically here,
-with the exception of `main` and `entrypoint`, which cannot be used with this
-macro.
 
 This produces two things:
 
@@ -65,6 +61,10 @@ This produces two things:
   2. A small shell script to launch the `<name>_runner` executable with each
      of the `srcs` enumerated as commandline arguments.  This is the actual
      test entrypoint for bazel.
+
+Almost all of the attributes that can be used with pex_test work identically
+here, including those not specifically mentioned in this docstring.
+Exceptions are `main` and `entrypoint`, which cannot be used with this macro.
 
 
 <a name="pex_pytest_args"></a>
@@ -88,7 +88,7 @@ This produces two things:
       <td><code>srcs</code></td>
       <td>
         <p><code>Unknown; Required</code></p>
-        
+        <p>List of files containing tests that should be run.</p>
       </td>
     </tr>
     <tr id="pex_pytest.deps">
@@ -96,6 +96,13 @@ This produces two things:
       <td>
         <p><code>List of strings; Optional</code></p>
         
+      </td>
+    </tr>
+    <tr id="pex_pytest.pytest_args">
+      <td><code>pytest_args</code></td>
+      <td>
+        <p><code>String; Optional</code></p>
+        <p>Extra commandline arguments for py.test.</p>
       </td>
     </tr>
   </tbody>

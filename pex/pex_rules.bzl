@@ -24,7 +24,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.4",
+        tag = "0.1.5",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -371,10 +371,6 @@ _pytest_pex_test = rule(
 def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
   """A variant of pex_test that uses py.test to run one or more sets of tests.
 
-  Almost all of the attributes that apply to pex_test work identically here,
-  with the exception of `main` and `entrypoint`, which cannot be used with this
-  macro.
-
   This produces two things:
 
     1. A pex_binary (`<name>_runner`) containing all your code and its
@@ -383,6 +379,16 @@ def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
     2. A small shell script to launch the `<name>_runner` executable with each
        of the `srcs` enumerated as commandline arguments.  This is the actual
        test entrypoint for bazel.
+
+  Almost all of the attributes that can be used with pex_test work identically
+  here, including those not specifically mentioned in this docstring.
+  Exceptions are `main` and `entrypoint`, which cannot be used with this macro.
+
+  Args:
+
+    srcs: List of files containing tests that should be run.
+
+    pytest_args: Extra commandline arguments for py.test.
   """
   if "main" in kwargs:
     fail("Specifying a `main` file makes no sense for pytest_pex_test.")

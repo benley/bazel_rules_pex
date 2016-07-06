@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Derived from https://github.com/twitter/heron/blob/master/tools/rules/pex_rules.bzl
+# Originally derived from:
+# https://github.com/twitter/heron/blob/master/tools/rules/pex_rules.bzl
 
 """Python pex rules for Bazel
 
@@ -36,13 +37,18 @@ In a BUILD file where you want to use these rules, or in your
         "pex_binary",
         "pex_library",
         "pex_test",
-        "pytest_pex_test",
+        "pex_pytest",
     )
 """
 
 pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
-pex_test_file_types = FileType(["_unittest.py", "_test.py"])
+
+# As much as I think this test file naming convention is a good thing, it's
+# probably a bad idea to impose it as a policy to all OSS users of these rules,
+# so I guess let's skip it.
+#
+# pex_test_file_types = FileType(["_unittest.py", "_test.py"])
 
 
 def _collect_transitive_sources(ctx):
@@ -213,27 +219,33 @@ def _pex_binary_impl(ctx):
 
 
 def _pex_pytest_impl(ctx):
-  pex_test_files = pex_file_types.filter(ctx.files.srcs)
-  test_runner = ctx.executable.runner
-
-  # FIXME(benley): This will probably break on paths with spaces
+  # FIXME(benley): This may break on paths with spaces.
   #                But you should also stop wanting that.
-  test_run_args = ' '.join([f.path for f in pex_test_files])
+  test_runner = ctx.executable.runner
+  test_files = set(ctx.files.srcs)
+  test_run_args = " ".join([
+      ctx.attr.pytest_args,
+      cmd_helper.join_paths(" ", test_files)
+  ])
 
   executable = ctx.outputs.executable
   ctx.file_action(
       output = executable,
-      content = ('#!/bin/sh\nPYTHONDONTWRITEBYTECODE=1 %s %s\n\n' %
-                 (test_runner.short_path, test_run_args)))
+      content = "\n".join([
+          "#!/bin/sh",
+          "PYTHONDONTWRITEBYTECODE=1 %s %s\n" % (test_runner.short_path,
+                                                 test_run_args),
+      ])
+  )
 
-  _inputs = pex_test_files + [test_runner]
+  _inputs = test_files + [test_runner]
 
   return struct(
       files = set([executable]),
       runfiles = ctx.runfiles(
           transitive_files = set(_inputs),
           collect_default = True
-      ),
+      )
   )
 
 
@@ -351,11 +363,12 @@ _pytest_pex_test = rule(
             executable = True,
             mandatory = True,
         ),
+        "pytest_args": attr.string(),
     }),
 )
 
 
-def pex_pytest(name, srcs, deps=[], **kwargs):
+def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
   """A variant of pex_test that uses py.test to run one or more sets of tests.
 
   Almost all of the attributes that apply to pex_test work identically here,
@@ -387,6 +400,7 @@ def pex_pytest(name, srcs, deps=[], **kwargs):
       name = name,
       runner = ":%s_runner" % name,
       srcs = srcs,
+      pytest_args = pytest_args,
   )
 
 

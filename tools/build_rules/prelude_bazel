@@ -12,5 +12,5 @@ load(
     "pex_binary",
     "pex_library",
     "pex_test",
-    "pytest_pex_test",
+    "pex_pytest",
 )

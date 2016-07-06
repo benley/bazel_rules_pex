@@ -355,7 +355,27 @@ _pytest_pex_test = rule(
 )
 
 
-def pytest_pex_test(name, srcs, deps=[], **kwargs):
+def pex_pytest(name, srcs, deps=[], **kwargs):
+  """A variant of pex_test that uses py.test to run one or more sets of tests.
+
+  Almost all of the attributes that apply to pex_test work identically here,
+  with the exception of `main` and `entrypoint`, which cannot be used with this
+  macro.
+
+  This produces two things:
+
+    1. A pex_binary (`<name>_runner`) containing all your code and its
+       dependencies, plus py.test, and the entrypoint set to the py.test
+       runner.
+    2. A small shell script to launch the `<name>_runner` executable with each
+       of the `srcs` enumerated as commandline arguments.  This is the actual
+       test entrypoint for bazel.
+  """
+  if "main" in kwargs:
+    fail("Specifying a `main` file makes no sense for pytest_pex_test.")
+  if "entrypoint" in kwargs:
+    fail("Do not specify `entrypoint` for pytest_pex_test.")
+
   pex_binary(
       name = "%s_runner" % name,
       srcs = srcs,

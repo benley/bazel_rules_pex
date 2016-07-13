@@ -120,7 +120,7 @@ Rules to be invoked from WORKSPACE for remote dependencies.
 ## pex_binary
 
 <pre>
-pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
+pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.interpreter">interpreter</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
 </pre>
 
 Build a deployable pex executable.
@@ -183,6 +183,13 @@ will be relative to the workspace root.</p>
 <p>e.g. <code>your.project.main</code></p>
 <p>If unspecified, the <code>main</code> attribute will be used.
 It is an error to specify both main and entrypoint.</p>
+      </td>
+    </tr>
+    <tr id="pex_binary.interpreter">
+      <td><code>interpreter</code></td>
+      <td>
+        <p><code>String; Optional</code></p>
+        <p>Path to the python interpreter the pex should to use in its shebang line.</p>
       </td>
     </tr>
     <tr id="pex_binary.main">
@@ -294,7 +301,7 @@ the transitive python dependencies and fetch them from pypi.</p>
 ## pex_test
 
 <pre>
-pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.entrypoint">entrypoint</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
+pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.entrypoint">entrypoint</a>, <a href="#pex_test.interpreter">interpreter</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
 </pre>
 
 
@@ -357,6 +364,13 @@ will be relative to the workspace root.</p>
 <p>e.g. <code>your.project.main</code></p>
 <p>If unspecified, the <code>main</code> attribute will be used.
 It is an error to specify both main and entrypoint.</p>
+      </td>
+    </tr>
+    <tr id="pex_test.interpreter">
+      <td><code>interpreter</code></td>
+      <td>
+        <p><code>String; Optional</code></p>
+        <p>Path to the python interpreter the pex should to use in its shebang line.</p>
       </td>
     </tr>
     <tr id="pex_test.main">

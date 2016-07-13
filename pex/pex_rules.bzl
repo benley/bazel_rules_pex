@@ -346,6 +346,8 @@ Args:
 
     If unspecified, the `main` attribute will be used.
     It is an error to specify both main and entrypoint.
+
+  interpreter: Path to the python interpreter the pex should to use in its shebang line.
 """
 
 pex_test = rule(

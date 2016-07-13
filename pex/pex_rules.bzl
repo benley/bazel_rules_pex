@@ -24,7 +24,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.5",
+        tag = "0.1.6",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -39,6 +39,9 @@ In a BUILD file where you want to use these rules, or in your
         "pex_test",
         "pex_pytest",
     )
+
+Lastly, make sure that `tools/build_rules/BUILD` exists, even if it is empty,
+so that Bazel can find your `prelude_bazel` file.
 """
 
 pex_file_types = FileType([".py"])

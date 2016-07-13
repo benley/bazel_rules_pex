@@ -28,7 +28,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.1.5",
+        tag = "0.1.6",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -43,6 +43,9 @@ In a BUILD file where you want to use these rules, or in your
         "pex_test",
         "pex_pytest",
     )
+
+Lastly, make sure that `tools/build_rules/BUILD` exists, even if it is empty,
+so that Bazel can find your `prelude_bazel` file.
 
 <a name="pex_pytest"></a>
 ## pex_pytest
@@ -120,7 +123,7 @@ Rules to be invoked from WORKSPACE for remote dependencies.
 ## pex_binary
 
 <pre>
-pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.interpreter">interpreter</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
+pex_binary(<a href="#pex_binary.name">name</a>, <a href="#pex_binary.deps">deps</a>, <a href="#pex_binary.data">data</a>, <a href="#pex_binary.srcs">srcs</a>, <a href="#pex_binary.eggs">eggs</a>, <a href="#pex_binary.entrypoint">entrypoint</a>, <a href="#pex_binary.interpreter">interpreter</a>, <a href="#pex_binary.main">main</a>, <a href="#pex_binary.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_binary.pex_verbosity">pex_verbosity</a>, <a href="#pex_binary.reqs">reqs</a>, <a href="#pex_binary.zip_safe">zip_safe</a>)
 </pre>
 
 Build a deployable pex executable.
@@ -204,6 +207,13 @@ It is an error to specify both main and entrypoint.</p>
       <td><code>pex_use_wheels</code></td>
       <td>
         <p><code>Boolean; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_binary.pex_verbosity">
+      <td><code>pex_verbosity</code></td>
+      <td>
+        <p><code>Integer; Optional</code></p>
         
       </td>
     </tr>
@@ -301,7 +311,7 @@ the transitive python dependencies and fetch them from pypi.</p>
 ## pex_test
 
 <pre>
-pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.entrypoint">entrypoint</a>, <a href="#pex_test.interpreter">interpreter</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
+pex_test(<a href="#pex_test.name">name</a>, <a href="#pex_test.deps">deps</a>, <a href="#pex_test.data">data</a>, <a href="#pex_test.srcs">srcs</a>, <a href="#pex_test.eggs">eggs</a>, <a href="#pex_test.entrypoint">entrypoint</a>, <a href="#pex_test.interpreter">interpreter</a>, <a href="#pex_test.main">main</a>, <a href="#pex_test.pex_use_wheels">pex_use_wheels</a>, <a href="#pex_test.pex_verbosity">pex_verbosity</a>, <a href="#pex_test.reqs">reqs</a>, <a href="#pex_test.zip_safe">zip_safe</a>)
 </pre>
 
 
@@ -385,6 +395,13 @@ It is an error to specify both main and entrypoint.</p>
       <td><code>pex_use_wheels</code></td>
       <td>
         <p><code>Boolean; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_test.pex_verbosity">
+      <td><code>pex_verbosity</code></td>
+      <td>
+        <p><code>Integer; Optional</code></p>
         
       </td>
     </tr>

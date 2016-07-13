@@ -1,4 +1,5 @@
 skylark_doc(
-    name = "pex_docs",
+    name = "docs",
     srcs = ["pex_rules.bzl"],
+    visibility = ["//visibility:public"],
 )

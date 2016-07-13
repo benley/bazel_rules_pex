@@ -174,6 +174,7 @@ def _pex_binary_impl(ctx):
   # form the arguments to pex builder
   arguments =  [] if ctx.attr.zip_safe else ["--not-zip-safe"]
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
+  arguments += ["--python", ctx.attr.interpreter]
   arguments += _common_pex_arguments(main_pkg,
                                      deploy_pex.path,
                                      manifest_file.path)
@@ -290,6 +291,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "main": attr.label(allow_files = True,
                        single_file = True),
     "entrypoint": attr.string(),
+    "interpreter": attr.string(default="/usr/bin/python2.7"),
     "pex_use_wheels": attr.bool(default=True),
     "zip_safe": attr.bool(
         default = True,

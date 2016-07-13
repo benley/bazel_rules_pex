@@ -116,7 +116,7 @@ def resolve_or_die(interpreter, requirement, options):
 
 def main():
     """ Main """
-    # These are the options that this class will accept from the rule
+    # Options that this wrapper will accept from the bazel rule
     parser = optparse.OptionParser(usage="usage: %prog [options] output")
     parser.add_option('--entry-point', default='__main__')
     parser.add_option('--no-pypi', action='store_false',
@@ -127,6 +127,7 @@ def main():
     parser.add_option('--find-links', dest='find_links', default='')
     parser.add_option('--no-use-wheel', action='store_false',
                       dest='use_wheel', default=True)
+    parser.add_option('--pex-root', dest='pex_root', default=".pex")
     options, args = parser.parse_args()
 
     # The manifest is passed via stdin or a file, as it can sometimes get too
@@ -159,6 +160,10 @@ def main():
         poptions.python = options.python
         poptions.use_wheel = options.use_wheel
         poptions.zip_safe = options.zip_safe
+
+        poptions.pex_root = options.pex_root
+        poptions.cache_dir = options.pex_root + "/build"
+        poptions.interpreter_cache_dir = options.pex_root + "/interpreters"
 
         # sys.stderr.write("pex options: %s\n" % poptions)
         os.environ["PATH"] = "%s:/bin:/usr/bin" % poptions.python

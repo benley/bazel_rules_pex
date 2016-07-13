@@ -175,6 +175,9 @@ def _pex_binary_impl(ctx):
   arguments =  [] if ctx.attr.zip_safe else ["--not-zip-safe"]
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
   arguments += ["--python", ctx.attr.interpreter]
+  # Put pex's caches in the bazel execroot so `bazel clean` is effective at
+  # expunging those too.
+  arguments += ["--pex-root", ".pex"]
   arguments += _common_pex_arguments(main_pkg,
                                      deploy_pex.path,
                                      manifest_file.path)
@@ -200,6 +203,7 @@ def _pex_binary_impl(ctx):
           "requires-network": "1",
       },
       env = {
+          'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
           'SETUPTOOLS_PATH': ctx.file._setuptools.path,
           'WHEEL_PATH': ctx.file._wheel.path,
       },
@@ -293,6 +297,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "entrypoint": attr.string(),
     "interpreter": attr.string(default="/usr/bin/python2.7"),
     "pex_use_wheels": attr.bool(default=True),
+    "pex_verbosity": attr.int(default=1),
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,

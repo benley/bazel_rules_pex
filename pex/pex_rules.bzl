@@ -231,18 +231,15 @@ def _pex_pytest_impl(ctx):
   #                But you should also stop wanting that.
   test_runner = ctx.executable.runner
   test_files = set(ctx.files.srcs)
-  test_run_args = " ".join([
-      ctx.attr.pytest_args,
-      cmd_helper.join_paths(" ", test_files)
-  ])
+  test_run_args = cmd_helper.join_paths(" ", test_files)
 
   executable = ctx.outputs.executable
   ctx.file_action(
       output = executable,
-      content = "\n".join([
-          "#!/bin/sh",
-          "PYTHONDONTWRITEBYTECODE=1 %s %s\n" % (test_runner.short_path,
-                                                 test_run_args),
+      content = '\n'.join([
+          '#!/bin/sh',
+          'PYTHONDONTWRITEBYTECODE=1 %s %s "$@"\n' % (test_runner.short_path,
+                                                      test_run_args)
       ])
   )
 
@@ -300,7 +297,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "entrypoint": attr.string(),
     "interpreter": attr.string(default="python2.7"),
     "pex_use_wheels": attr.bool(default=True),
-    "pex_verbosity": attr.int(default=1),
+    "pex_verbosity": attr.int(default=0),
     "zip_safe": attr.bool(
         default = True,
         mandatory = False,
@@ -375,12 +372,17 @@ _pytest_pex_test = rule(
             executable = True,
             mandatory = True,
         ),
-        "pytest_args": attr.string(),
     }),
 )
 
 
-def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
+def pex_pytest(name, srcs, deps=[], eggs=[],
+               args=[],
+               flaky=False,
+               local=None,
+               size=None,
+               timeout=None,
+               **kwargs):
   """A variant of pex_test that uses py.test to run one or more sets of tests.
 
   This produces two things:
@@ -399,8 +401,6 @@ def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
   Args:
 
     srcs: List of files containing tests that should be run.
-
-    pytest_args: Extra commandline arguments for py.test.
   """
   if "main" in kwargs:
     fail("Specifying a `main` file makes no sense for pytest_pex_test.")
@@ -410,15 +410,23 @@ def pex_pytest(name, srcs, deps=[], pytest_args="", **kwargs):
   pex_binary(
       name = "%s_runner" % name,
       srcs = srcs,
-      deps = deps + ["//third_party/py/pytest"],
+      deps = deps,
+      eggs = eggs + [
+          "//external:wheel/pytest",
+          "//external:wheel/py",
+      ],
       entrypoint = "pytest",
       **kwargs
   )
   _pytest_pex_test(
       name = name,
       runner = ":%s_runner" % name,
+      args = args,
+      flaky = flaky,
+      local = local,
+      size = size,
       srcs = srcs,
-      pytest_args = pytest_args,
+      timeout = timeout,
   )
 
 

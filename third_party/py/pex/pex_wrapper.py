@@ -4,6 +4,7 @@
 Derived from https://github.com/twitter/heron/blob/master/3rdparty/pex/_pex.py
 """
 
+import distutils.spawn
 import functools
 import optparse
 import os
@@ -123,7 +124,7 @@ def main():
                       dest='pypi', default=True)
     parser.add_option('--not-zip-safe', action='store_false',
                       dest='zip_safe', default=True)
-    parser.add_option('--python', default="/usr/bin/python2.7")
+    parser.add_option('--python', default="python2.7")
     parser.add_option('--find-links', dest='find_links', default='')
     parser.add_option('--no-use-wheel', action='store_false',
                       dest='use_wheel', default=True)
@@ -166,17 +167,24 @@ def main():
         poptions.interpreter_cache_dir = options.pex_root + "/interpreters"
 
         # sys.stderr.write("pex options: %s\n" % poptions)
-        os.environ["PATH"] = "%s:/bin:/usr/bin" % poptions.python
+        os.environ["PATH"] = os.getenv("PATH",
+                                       "%s:/bin:/usr/bin" % poptions.python)
+
+        if os.path.exists(options.python):
+            pybin = poptions.python
+        else:
+            pybin = distutils.spawn.find_executable(options.python)
 
         # The version of pkg_resources.py (from setuptools) on some distros is
         # too old for PEX. So we keep a recent version in and force it into the
         # process by constructing a custom PythonInterpreter instance using it.
         interpreter = PythonInterpreter(
-            poptions.python,
-            PythonInterpreter.from_binary(options.python).identity,
+            pybin,
+            PythonInterpreter.from_binary(pybin).identity,
             extras={
                 # TODO: Fix this to resolve automatically
                 ('setuptools', '18.0.1'): SETUPTOOLS_PATH,
+                # FIXME: I don't think this accomplishes anything at all.
                 ('wheel', '0.23.0'): WHEEL_PATH,
             })
 

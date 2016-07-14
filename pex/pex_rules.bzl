@@ -298,7 +298,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "main": attr.label(allow_files = True,
                        single_file = True),
     "entrypoint": attr.string(),
-    "interpreter": attr.string(default="/usr/bin/python2.7"),
+    "interpreter": attr.string(default="python2.7"),
     "pex_use_wheels": attr.bool(default=True),
     "pex_verbosity": attr.int(default=1),
     "zip_safe": attr.bool(

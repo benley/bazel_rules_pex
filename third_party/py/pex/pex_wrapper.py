@@ -9,7 +9,6 @@ import functools
 import optparse
 import os
 import pkg_resources
-import shutil
 import sys
 import tempfile
 import zipfile
@@ -148,110 +147,106 @@ def main():
 
     manifest = parse_manifest(manifest_text)
 
-    # Setup a temp dir that the PEX builder will use as its scratch dir.
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        # These are the options that pex will use
-        pparser, resolver_options_builder = configure_clp()
+    # These are the options that pex will use
+    pparser, resolver_options_builder = configure_clp()
 
-        poptions, preqs = pparser.parse_args(sys.argv)
-        poptions.entry_point = options.entry_point
-        poptions.find_links = options.find_links
-        poptions.pypi = options.pypi
-        poptions.python = options.python
-        poptions.use_wheel = options.use_wheel
-        poptions.zip_safe = options.zip_safe
+    poptions, preqs = pparser.parse_args(sys.argv)
+    poptions.entry_point = options.entry_point
+    poptions.find_links = options.find_links
+    poptions.pypi = options.pypi
+    poptions.python = options.python
+    poptions.use_wheel = options.use_wheel
+    poptions.zip_safe = options.zip_safe
 
-        poptions.pex_root = options.pex_root
-        poptions.cache_dir = options.pex_root + "/build"
-        poptions.interpreter_cache_dir = options.pex_root + "/interpreters"
+    poptions.pex_root = options.pex_root
+    poptions.cache_dir = options.pex_root + "/build"
+    poptions.interpreter_cache_dir = options.pex_root + "/interpreters"
 
-        # sys.stderr.write("pex options: %s\n" % poptions)
-        os.environ["PATH"] = os.getenv("PATH",
-                                       "%s:/bin:/usr/bin" % poptions.python)
+    # sys.stderr.write("pex options: %s\n" % poptions)
+    os.environ["PATH"] = os.getenv("PATH",
+                                   "%s:/bin:/usr/bin" % poptions.python)
 
-        if os.path.exists(options.python):
-            pybin = poptions.python
-        else:
-            pybin = distutils.spawn.find_executable(options.python)
+    if os.path.exists(options.python):
+        pybin = poptions.python
+    else:
+        pybin = distutils.spawn.find_executable(options.python)
 
-        # The version of pkg_resources.py (from setuptools) on some distros is
-        # too old for PEX. So we keep a recent version in and force it into the
-        # process by constructing a custom PythonInterpreter instance using it.
-        interpreter = PythonInterpreter(
-            pybin,
-            PythonInterpreter.from_binary(pybin).identity,
-            extras={
-                # TODO: Fix this to resolve automatically
-                ('setuptools', '18.0.1'): SETUPTOOLS_PATH,
-                # FIXME: I don't think this accomplishes anything at all.
-                ('wheel', '0.23.0'): WHEEL_PATH,
-            })
+    # The version of pkg_resources.py (from setuptools) on some distros is
+    # too old for PEX. So we keep a recent version in and force it into the
+    # process by constructing a custom PythonInterpreter instance using it.
+    # interpreter = PythonInterpreter.from_binary(pybin,
+    #                                             [SETUPTOOLS_PATH,
+    #                                              WHEEL_PATH])
+    interpreter = PythonInterpreter(
+        pybin,
+        PythonInterpreter.from_binary(pybin).identity,
+        extras={
+            # TODO: Fix this to resolve automatically
+            ('setuptools', '18.0.1'): SETUPTOOLS_PATH,
+            # FIXME: I don't think this accomplishes anything at all.
+            ('wheel', '0.23.0'): WHEEL_PATH,
+        })
 
-        # resolve setuptools
+    # resolve setuptools
+    interpreter = resolve_or_die(interpreter,
+                                 SETUPTOOLS_REQUIREMENT,
+                                 poptions)
+
+    # possibly resolve wheel
+    if interpreter and poptions.use_wheel:
         interpreter = resolve_or_die(interpreter,
-                                     SETUPTOOLS_REQUIREMENT,
+                                     WHEEL_REQUIREMENT,
                                      poptions)
 
-        # possibly resolve wheel
-        if interpreter and poptions.use_wheel:
-            interpreter = resolve_or_die(interpreter,
-                                         WHEEL_REQUIREMENT,
-                                         poptions)
+    # Add prebuilt libraries listed in the manifest.
+    reqs = manifest.get('requirements', {}).keys()
+    # if len(reqs) > 0:
+    #   sys.stderr.write("pex requirements: %s" % reqs)
+    pex_builder = build_pex(reqs, poptions,
+                            resolver_options_builder,
+                            interpreter=interpreter)
 
-        # Add prebuilt libraries listed in the manifest.
-        reqs = manifest.get('requirements', {}).keys()
-        # if len(reqs) > 0:
-        #   sys.stderr.write("pex requirements: %s" % reqs)
-        pex_builder = build_pex(reqs, poptions,
-                                resolver_options_builder,
-                                interpreter=interpreter)
+    # Set whether this PEX is zip-safe, meaning everything will stay zipped
+    # up and we'll rely on python's zip-import mechanism to load modules
+    # from the PEX.  This may not work in some situations (e.g. native
+    # libraries, libraries that want to find resources via the FS).
+    pex_builder.info.zip_safe = options.zip_safe
 
-        # Set whether this PEX is zip-safe, meaning everything will stay zipped
-        # up and we'll rely on python's zip-import mechanism to load modules
-        # from the PEX.  This may not work in some situations (e.g. native
-        # libraries, libraries that want to find resources via the FS).
-        pex_builder.info.zip_safe = options.zip_safe
+    # Set the starting point for this PEX.
+    pex_builder.info.entry_point = options.entry_point
 
-        # Set the starting point for this PEX.
-        pex_builder.info.entry_point = options.entry_point
+    pex_builder.add_source(
+        dereference_symlinks(PKG_RESOURCES_PATH),
+        os.path.join(pex_builder.BOOTSTRAP_DIR, 'pkg_resources.py'))
 
-        pex_builder.add_source(
-            dereference_symlinks(PKG_RESOURCES_PATH),
-            os.path.join(pex_builder.BOOTSTRAP_DIR, 'pkg_resources.py'))
+    # Add the sources listed in the manifest.
+    for dst, src in manifest['modules'].iteritems():
+        # NOTE(agallagher): calls the `add_source` and `add_resource` below
+        # hard-link the given source into the PEX temp dir.  Since OS X and
+        # Linux behave different when hard-linking a source that is a
+        # symbolic link (Linux does *not* follow symlinks), resolve any
+        # layers of symlinks here to get consistent behavior.
+        try:
+            pex_builder.add_source(dereference_symlinks(src), dst)
+        except OSError as err:
+            raise Exception("Failed to add {}: {}".format(src, err))
 
-        # Add the sources listed in the manifest.
-        for dst, src in manifest['modules'].iteritems():
-            # NOTE(agallagher): calls the `add_source` and `add_resource` below
-            # hard-link the given source into the PEX temp dir.  Since OS X and
-            # Linux behave different when hard-linking a source that is a
-            # symbolic link (Linux does *not* follow symlinks), resolve any
-            # layers of symlinks here to get consistent behavior.
-            try:
-                pex_builder.add_source(dereference_symlinks(src), dst)
-            except OSError as err:
-                raise Exception("Failed to add {}: {}".format(src, err))
+    # Add resources listed in the manifest.
+    for dst, src in manifest['resources'].iteritems():
+        # NOTE(agallagher): see rationale above.
+        pex_builder.add_resource(dereference_symlinks(src), dst)
 
-        # Add resources listed in the manifest.
-        for dst, src in manifest['resources'].iteritems():
-            # NOTE(agallagher): see rationale above.
-            pex_builder.add_resource(dereference_symlinks(src), dst)
+    # Add prebuilt libraries listed in the manifest.
+    for req in manifest.get('prebuiltLibraries', []):
+        try:
+            pex_builder.add_dist_location(req)
+        except Exception as err:
+            raise Exception("Failed to add {}: {}".format(req, err))
 
-        # Add prebuilt libraries listed in the manifest.
-        for req in manifest.get('prebuiltLibraries', []):
-            try:
-                pex_builder.add_dist_location(req)
-            except Exception as err:
-                raise Exception("Failed to add {}: {}".format(req, err))
+    # TODO(mikekap): Do something about manifest['nativeLibraries'].
 
-        # TODO(mikekap): Do something about manifest['nativeLibraries'].
-
-        # Generate the PEX file.
-        pex_builder.build(output)
-
-    # Always try cleaning up the scratch dir, ignoring failures.
-    finally:
-        shutil.rmtree(tmp_dir, True)
+    # Generate the PEX file.
+    pex_builder.build(output)
 
 
 sys.exit(main())

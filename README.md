@@ -51,7 +51,7 @@ so that Bazel can find your `prelude_bazel` file.
 ## pex_pytest
 
 <pre>
-pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>, <a href="#pex_pytest.pytest_args">pytest_args</a>)
+pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>, <a href="#pex_pytest.eggs">eggs</a>, <a href="#pex_pytest.args">args</a>, <a href="#pex_pytest.flaky">flaky</a>, <a href="#pex_pytest.local">local</a>, <a href="#pex_pytest.size">size</a>, <a href="#pex_pytest.timeout">timeout</a>)
 </pre>
 
 A variant of pex_test that uses py.test to run one or more sets of tests.
@@ -101,11 +101,46 @@ Exceptions are `main` and `entrypoint`, which cannot be used with this macro.
         
       </td>
     </tr>
-    <tr id="pex_pytest.pytest_args">
-      <td><code>pytest_args</code></td>
+    <tr id="pex_pytest.eggs">
+      <td><code>eggs</code></td>
       <td>
-        <p><code>String; Optional</code></p>
-        <p>Extra commandline arguments for py.test.</p>
+        <p><code>List of strings; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.args">
+      <td><code>args</code></td>
+      <td>
+        <p><code>List of strings; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.flaky">
+      <td><code>flaky</code></td>
+      <td>
+        <p><code>Unknown; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.local">
+      <td><code>local</code></td>
+      <td>
+        <p><code>Unknown; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.size">
+      <td><code>size</code></td>
+      <td>
+        <p><code>Unknown; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.timeout">
+      <td><code>timeout</code></td>
+      <td>
+        <p><code>Unknown; Optional</code></p>
+        
       </td>
     </tr>
   </tbody>

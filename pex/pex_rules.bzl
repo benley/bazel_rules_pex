@@ -17,6 +17,8 @@
 
 """Python pex rules for Bazel
 
+[![Build Status](https://travis-ci.org/benley/bazel_rules_pex.svg?branch=master)](https://travis-ci.org/benley/bazel_rules_pex)
+
 ### Setup
 
 Add something like this to your WORKSPACE file:

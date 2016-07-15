@@ -8,7 +8,6 @@ import distutils.spawn
 import functools
 import optparse
 import os
-import pkg_resources
 import sys
 import tempfile
 import zipfile
@@ -35,8 +34,10 @@ if not zipfile.is_zipfile(sys.argv[0]):
 
     PKG_RESOURCES_PATH = os.path.join(BAZEL_ROOT, PKG_RESOURCES_PATH)
 
-# Otherwise, we're running from a PEX, so extract pkg_resources via a resource.
+# Otherwise we're probably running from a PEX, so use pkg_resources to extract
+# itself from the binary.
 else:
+    import pkg_resources
     pkg_resources_py_tmp = tempfile.NamedTemporaryFile(
         prefix='pkg_resources.py')
     pkg_resources_py_tmp.write(

@@ -147,10 +147,6 @@ def _make_manifest(ctx, output):
       content = manifest_text)
 
 
-def _common_pex_arguments(entry_point, deploy_pex_path, manifest_file_path):
-  return ['--entry-point', entry_point, deploy_pex_path, manifest_file_path]
-
-
 def _pex_binary_impl(ctx):
   if ctx.attr.entrypoint and ctx.file.main:
     fail("Please specify either entrypoint or main, not both.")
@@ -179,13 +175,13 @@ def _pex_binary_impl(ctx):
   # form the arguments to pex builder
   arguments =  [] if ctx.attr.zip_safe else ["--not-zip-safe"]
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
-  arguments += ["--python", ctx.attr.interpreter]
-  # Put pex's caches in the bazel execroot so `bazel clean` is effective at
-  # expunging those too.
-  arguments += ["--pex-root", ".pex"]
-  arguments += _common_pex_arguments(main_pkg,
-                                     deploy_pex.path,
-                                     manifest_file.path)
+  if ctx.attr.interpreter:
+    arguments += ["--python", ctx.attr.interpreter]
+  arguments += ["--pex-root", ".pex",
+                "--entry-point", main_pkg,
+                "--output-file", deploy_pex.path,
+                "--cache-dir", ".pex/build",
+                manifest_file.path]
 
   # form the inputs to pex builder
   _inputs = (
@@ -193,8 +189,7 @@ def _pex_binary_impl(ctx):
       list(py.transitive_sources) +
       list(py.transitive_egg_files) +
       list(py.transitive_data_files) +
-      list(ctx.attr._pexbuilder.data_runfiles.files) +
-      [ctx.file._setuptools, ctx.file._wheel]
+      list(ctx.attr._pexbuilder.data_runfiles.files)
   )
   if main_file:
     _inputs.append(main_file)
@@ -208,10 +203,13 @@ def _pex_binary_impl(ctx):
           "requires-network": "1",
       },
       env = {
+          # FIXME(benley): Setting PATH like this probably is not ideal, but
+          # use_default_shell_env makes it ignore PEX_VERBOSE too, which also
+          # sucks.
+          'PATH': '/usr/bin:/usr/local/bin',
           'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
-          'SETUPTOOLS_PATH': ctx.file._setuptools.path,
-          'WHEEL_PATH': ctx.file._wheel.path,
       },
+      #use_default_shell_env = True,
       arguments = arguments)
 
   # TODO(benley): what's the point of the separate deploy pex if it's just a
@@ -270,17 +268,9 @@ pex_attrs = {
     # From here down are used internally by pex_binary and pex_*test rules,
     # not pex_library.
     "_pexbuilder": attr.label(
-        default = Label("//third_party/py/pex:pex_wrapper"),
+        default = Label("//pex:pex_wrapper"),
         allow_files = False,
         executable = True
-    ),
-    "_wheel": attr.label(
-        default = Label("@wheel_whl//file"),
-        single_file = True,
-    ),
-    "_setuptools": attr.label(
-        default = Label("@setuptools_whl//file"),
-        single_file = True,
     ),
 }
 
@@ -297,7 +287,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
     "main": attr.label(allow_files = True,
                        single_file = True),
     "entrypoint": attr.string(),
-    "interpreter": attr.string(default="python2.7"),
+    "interpreter": attr.string(),
     "pex_use_wheels": attr.bool(default=True),
     "pex_verbosity": attr.int(default=0),
     "zip_safe": attr.bool(
@@ -457,13 +447,16 @@ def pex_repositories():
   )
 
   native.http_file(
-      name = "wheel_whl",
-      url = "https://pypi.python.org/packages/a9/67/43036e2db1a344ad24ba468b6262826b3837ce629b7b4c09c18d3e2b5800/wheel-0.23.0-py2.py3-none-any.whl",
-      sha256 = "cbc6b2e274557b5e8ee8b61ca4c0c781702956a80cdbeb7ec0446834b5078082",
+      name = "wheel_src",
+      url = "https://pypi.python.org/packages/c9/1d/bd19e691fd4cfe908c76c429fe6e4436c9e83583c4414b54f6c85471954a/wheel-0.29.0.tar.gz",
   )
 
   native.http_file(
-      name = "setuptools_whl",
-      url = "https://pypi.python.org/packages/00/d5/1233f051f7ce669a2009301aa75f1efbd97ccde6b60236997fd9111d5297/setuptools-18.0.1-py2.py3-none-any.whl",
-      sha256 = "825814864707c12e3eb7878c9d9cc7189507022d53476b71ef833b3d28df0c9c",
+      name = "setuptools_src",
+      url = "https://pypi.python.org/packages/d3/16/21cf5dc6974280197e42d57bf7d372380562ec69aef9bb796b5e2dbbed6e/setuptools-20.10.1.tar.gz",
+  )
+
+  native.http_file(
+      name = "pex_src",
+      url = "https://pypi.python.org/packages/60/fc/b94f97a1db627710526715fd17fa322189e3c98f16331b3eb5390c585886/pex-1.1.13.tar.gz",
   )

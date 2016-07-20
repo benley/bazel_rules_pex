@@ -20,25 +20,31 @@ genrule(
         OUTDIR=$$(cd $(@D) && pwd)
         export PYTHONUSERBASE=$$OUTDIR/__pythonuserbase
 
-        # FIXME(benley): get rid of this hardcoded python2.7 reference
-        # (why the heck is this necessary?)
-        mkdir -p $$PYTHONUSERBASE/lib/python2.7/site-packages
+        # Create /.../lib/pythonX.Y/site-packages so easy_install doesn't fail
+        mkdir -p $$(python -m site --user-site)
 
         # Bootstrap setuptools:
         tar xzf $(location @setuptools_src//file)
-        (cd setuptools* && python setup.py install --user)
+        (cd setuptools* && python setup.py --quiet install --user)
 
         # Use that new setuptools to install wheel and pex:
-        $$PYTHONUSERBASE/bin/easy_install --user $(location @wheel_src//file)
-        $$PYTHONUSERBASE/bin/easy_install --user $(location @pex_src//file)
+        $$PYTHONUSERBASE/bin/easy_install --quiet \
+                                          --build-directory $(@D)/build \
+                                          --user $(location @wheel_src//file)
+        $$PYTHONUSERBASE/bin/easy_install --quiet \
+                                          --build-directory $(@D)/build \
+                                          --user $(location @pex_src//file)
 
-        (
-         cd $$(dirname $(location wrapper/setup.py))
-         python setup.py bdist_egg
-        )
-        # Use pex to build a pex of itself:
-        $$PYTHONUSERBASE/bin/pex $$(dirname $(location wrapper/setup.py))/dist/pex_wrapper-*.egg \
+        # Work around setuptools insistance on writing to the source directory,
+        # which is discouraged by Bazel (and annoying)
+        cp -r $$(dirname $(location wrapper/setup.py)) $(@D)/.pex_wrapper
+        ( cd $(@D)/.pex_wrapper
+          python setup.py --quiet sdist --dist-dir $$OUTDIR )
+
+        # Use the bootstrapped pex to build pex_wrapper.pex
+        $$PYTHONUSERBASE/bin/pex pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
+            --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file)) \
             --find-links $$(dirname $(location @wheel_src//file))

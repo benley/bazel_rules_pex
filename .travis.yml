@@ -1,0 +1,25 @@
+dist: trusty
+sudo: required
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - pkg-config
+      - zip
+      - g++
+      - zlib1g-dev
+      - unzip
+
+jdk:
+  - oraclejdk8
+
+before_install:
+  - wget "https://github.com/bazelbuild/bazel/releases/download/0.3.0/bazel-0.3.0-installer-linux-x86_64.sh"
+  - chmod +x "bazel-0.3.0-installer-linux-x86_64.sh"
+  - sudo "./bazel-0.3.0-installer-linux-x86_64.sh"
+
+script:
+  - bazel build //...
+  - bazel test //...

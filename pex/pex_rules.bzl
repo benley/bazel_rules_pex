@@ -205,8 +205,10 @@ def _pex_binary_impl(ctx):
       env = {
           # FIXME(benley): Setting PATH like this probably is not ideal, but
           # use_default_shell_env makes it ignore PEX_VERBOSE too, which also
-          # sucks.
-          'PATH': '/usr/bin:/usr/local/bin',
+          # sucks.  use_default_shell_env also potentially makes the build more
+          # susceptible to breakage from things like virtualenv or oddities in
+          # the outer environment.  WHAT TO DO?
+          'PATH': '/bin:/usr/bin:/usr/local/bin',
           'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
       },
       #use_default_shell_env = True,

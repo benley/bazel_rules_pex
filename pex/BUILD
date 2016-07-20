@@ -1,8 +1,4 @@
-skylark_doc(
-    name = "docs",
-    srcs = ["pex_rules.bzl"],
-    visibility = ["//visibility:public"],
-)
+exports_files(["pex_rules.bzl"])
 
 # Can't use pex_binary to build this one, so we have this elaborate ritual:
 genrule(

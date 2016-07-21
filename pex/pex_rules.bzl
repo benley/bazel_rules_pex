@@ -177,6 +177,8 @@ def _pex_binary_impl(ctx):
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
   if ctx.attr.interpreter:
     arguments += ["--python", ctx.attr.interpreter]
+  for egg in py.transitive_egg_files:
+    arguments += ["--find-links", egg.dirname]
   arguments += ["--pex-root", ".pex",
                 "--entry-point", main_pkg,
                 "--output-file", deploy_pex.path,

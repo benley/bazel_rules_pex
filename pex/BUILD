@@ -16,20 +16,27 @@ genrule(
         OUTDIR=$$(cd $(@D) && pwd)
         export PYTHONUSERBASE=$$OUTDIR/__pythonuserbase
 
+        PYTHON_VERSION="$$(python -c "import sys; print sys.version[:3]")"
         # Create /.../lib/pythonX.Y/site-packages so easy_install doesn't fail
-        mkdir -p $$(python -m site --user-site)
+        # `sed` works around https://github.com/pypa/setuptools/issues/672
+        export PYTHONPATH="$$(python -m site --user-site | \
+            sed "s|lib/python/site-packages|lib/python$$PYTHON_VERSION/site-packages|")/"
+        mkdir -p $$PYTHONPATH
 
         # Bootstrap setuptools:
         tar xzf $(location @setuptools_src//file)
-        (cd setuptools* && python setup.py --quiet install --user)
+        (cd setuptools* && \
+         python setup.py --quiet install --prefix=$$PYTHONUSERBASE)
 
         # Use that new setuptools to install wheel and pex:
         $$PYTHONUSERBASE/bin/easy_install --quiet \
                                           --build-directory $(@D)/build \
-                                          --user $(location @wheel_src//file)
+                                          --prefix=$$PYTHONUSERBASE \
+                                          $(location @wheel_src//file)
         $$PYTHONUSERBASE/bin/easy_install --quiet \
                                           --build-directory $(@D)/build \
-                                          --user $(location @pex_src//file)
+                                          --prefix=$$PYTHONUSERBASE \
+                                          $(location @pex_src//file)
 
         # Work around setuptools insistance on writing to the source directory,
         # which is discouraged by Bazel (and annoying)

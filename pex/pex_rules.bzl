@@ -453,14 +453,17 @@ def pex_repositories():
   native.http_file(
       name = "wheel_src",
       url = "https://pypi.python.org/packages/c9/1d/bd19e691fd4cfe908c76c429fe6e4436c9e83583c4414b54f6c85471954a/wheel-0.29.0.tar.gz",
+      sha256 = "1ebb8ad7e26b448e9caa4773d2357849bf80ff9e313964bcaf79cbf0201a1648",
   )
 
   native.http_file(
       name = "setuptools_src",
       url = "https://pypi.python.org/packages/d3/16/21cf5dc6974280197e42d57bf7d372380562ec69aef9bb796b5e2dbbed6e/setuptools-20.10.1.tar.gz",
+      sha256 = "3e59c885f09ed0d631816468e431b347b5103339e77a21cbf56df6283319b5dd",
   )
 
   native.http_file(
       name = "pex_src",
       url = "https://pypi.python.org/packages/60/fc/b94f97a1db627710526715fd17fa322189e3c98f16331b3eb5390c585886/pex-1.1.13.tar.gz",
+      sha256 = "241cc768d0ad56e53a099d2bc2c0eeb93857fc105cdc3d3da7cb030f4486e8ec",
   )

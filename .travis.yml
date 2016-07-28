@@ -1,10 +1,9 @@
+language: java
 dist: trusty
 sudo: required
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - pkg-config
       - zip

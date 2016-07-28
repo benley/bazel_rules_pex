@@ -11,20 +11,17 @@ genrule(
         "@wheel_src//file",
         "@pex_src//file",
         "@requests_src//file",
-        "@virtualenv_src//file",
     ],
+    tools = ["@virtualenv//:virtualenv"],
     outs = ["pex_wrapper.pex"],
     executable = True,
     cmd = """
         OUTDIR=$$(cd $(@D) && pwd)
-        mkdir venv_src
-        tar -C venv_src --strip-components 1 -xzf $(location @virtualenv_src//file)
-        python venv_src/virtualenv.py --no-download --quiet pex_venv
-        _python="$$PWD/pex_venv/bin/python"
+        $(location @virtualenv//:virtualenv) --no-download --quiet venv
+        _python="$$PWD/venv/bin/python"
 
-        pex_venv/bin/pip install pex \
-            --quiet \
-            --no-cache-dir --no-index --build $(@D)/build \
+        venv/bin/pip install pex \
+            --quiet --no-cache-dir --no-index --build $(@D)/pexbuild \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file))
 
@@ -35,7 +32,7 @@ genrule(
           $$_python setup.py --quiet sdist --dist-dir $$OUTDIR )
 
         # Use the bootstrapped pex to build pex_wrapper.pex
-        pex_venv/bin/pex pex_wrapper \
+        venv/bin/pex pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
             --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \

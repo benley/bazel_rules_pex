@@ -469,6 +469,12 @@ def pex_repositories():
   )
 
   native.http_file(
+      name = "requests_src",
+      url = "https://pypi.python.org/packages/49/6f/183063f01aae1e025cf0130772b55848750a2f3a89bfa11b385b35d7329d/requests-2.10.0.tar.gz",
+      sha256 = "63f1815788157130cee16a933b2ee184038e975f0017306d723ac326b5525b54",
+  )
+
+  native.http_file(
       name = "virtualenv_src",
       url = "https://pypi.python.org/packages/5c/79/5dae7494b9f5ed061cff9a8ab8d6e1f02db352f3facf907d9eb614fb80e9/virtualenv-15.0.2.tar.gz",
       sha256 = "fab40f32d9ad298fba04a260f3073505a16d52539a84843cf8c8369d4fd17167",

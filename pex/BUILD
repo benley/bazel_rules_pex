@@ -9,6 +9,7 @@ genrule(
         "@setuptools_src//file",
         "@wheel_src//file",
         "@pex_src//file",
+        "@requests_src//file",
         "@virtualenv_src//file",
     ],
     outs = ["pex_wrapper.pex"],
@@ -38,6 +39,7 @@ genrule(
             --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file)) \
+            --find-links $$(dirname $(location @requests_src//file)) \
             --find-links $$(dirname $(location @wheel_src//file))
     """,
     visibility = ["//visibility:public"],

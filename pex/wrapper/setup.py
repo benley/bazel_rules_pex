@@ -8,6 +8,7 @@ setuptools.setup(
     author_email="bar",
     url="foo",
     py_modules=["pex_wrapper"],
+    version="0.1",
     install_requires=[
         "pex",
         "wheel",

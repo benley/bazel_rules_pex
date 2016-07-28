@@ -464,8 +464,8 @@ def pex_repositories():
 
   native.http_file(
       name = "pex_src",
-      url = "https://pypi.python.org/packages/60/fc/b94f97a1db627710526715fd17fa322189e3c98f16331b3eb5390c585886/pex-1.1.13.tar.gz",
-      sha256 = "241cc768d0ad56e53a099d2bc2c0eeb93857fc105cdc3d3da7cb030f4486e8ec",
+      url = "https://pypi.python.org/packages/6d/b9/aacedca314f7061f84c021c9eaac9ceac9c57f277e4e9bbb6d998facec8d/pex-1.1.14.tar.gz",
+      sha256 = "2d0f5ec39d61c0ef0f806247d7e2702e5354583df7f232db5d9a3b287173e857",
   )
 
   native.http_file(

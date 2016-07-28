@@ -9,43 +9,31 @@ genrule(
         "@setuptools_src//file",
         "@wheel_src//file",
         "@pex_src//file",
+        "@virtualenv_src//file",
     ],
     outs = ["pex_wrapper.pex"],
     executable = True,
     cmd = """
         OUTDIR=$$(cd $(@D) && pwd)
-        export PYTHONUSERBASE=$$OUTDIR/__pythonuserbase
+        mkdir venv_src
+        tar -C venv_src --strip-components 1 -xzf $(location @virtualenv_src//file)
+        python venv_src/virtualenv.py --no-download --quiet pex_venv
+        _python="$$PWD/pex_venv/bin/python"
 
-        PYTHON_VERSION="$$(python -c "import sys; print sys.version[:3]")"
-        # Create /.../lib/pythonX.Y/site-packages so easy_install doesn't fail
-        # `sed` works around https://github.com/pypa/setuptools/issues/672
-        export PYTHONPATH="$$(python -m site --user-site | \
-            sed "s|lib/python/site-packages|lib/python$$PYTHON_VERSION/site-packages|")/"
-        mkdir -p $$PYTHONPATH
-
-        # Bootstrap setuptools:
-        tar xzf $(location @setuptools_src//file)
-        (cd setuptools* && \
-         python setup.py --quiet install --prefix=$$PYTHONUSERBASE)
-
-        # Use that new setuptools to install wheel and pex:
-        $$PYTHONUSERBASE/bin/easy_install --quiet \
-                                          --build-directory $(@D)/build \
-                                          --prefix=$$PYTHONUSERBASE \
-                                          $(location @wheel_src//file)
-        $$PYTHONUSERBASE/bin/easy_install --quiet \
-                                          --build-directory $(@D)/build \
-                                          --prefix=$$PYTHONUSERBASE \
-                                          $(location @pex_src//file)
+        pex_venv/bin/pip install pex \
+            --quiet \
+            --no-cache-dir --no-index --build $(@D)/build \
+            --find-links $$(dirname $(location @pex_src//file)) \
+            --find-links $$(dirname $(location @setuptools_src//file))
 
         # Work around setuptools insistance on writing to the source directory,
         # which is discouraged by Bazel (and annoying)
         cp -r $$(dirname $(location wrapper/setup.py)) $(@D)/.pex_wrapper
         ( cd $(@D)/.pex_wrapper
-          python setup.py --quiet sdist --dist-dir $$OUTDIR )
+          $$_python setup.py --quiet sdist --dist-dir $$OUTDIR )
 
         # Use the bootstrapped pex to build pex_wrapper.pex
-        $$PYTHONUSERBASE/bin/pex pex_wrapper \
+        pex_venv/bin/pex pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
             --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \

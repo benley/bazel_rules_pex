@@ -6,6 +6,7 @@ genrule(
     srcs = [
         "wrapper/setup.py",
         "wrapper/pex_wrapper.py",
+        "wrapper/README",
         "@setuptools_src//file",
         "@wheel_src//file",
         "@pex_src//file",

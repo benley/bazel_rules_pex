@@ -15,6 +15,8 @@ genrule(
     tools = ["@virtualenv//:virtualenv"],
     outs = ["pex_wrapper.pex"],
     executable = True,
+    output_to_bindir = True,
+    message = "Bootstrapping pex",
     cmd = """
         OUTDIR=$$(cd $(@D) && pwd)
         # Workaround really long shebang lines breaking on linux:

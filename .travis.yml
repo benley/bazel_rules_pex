@@ -1,23 +1,29 @@
 language: java
-dist: trusty
-sudo: required
 
-addons:
-  apt:
-    packages:
-      - pkg-config
-      - zip
-      - g++
-      - zlib1g-dev
-      - unzip
-
-jdk:
-  - oraclejdk8
-
-before_install:
-  - wget "https://github.com/bazelbuild/bazel/releases/download/0.3.0/bazel-0.3.0-installer-linux-x86_64.sh"
-  - chmod +x "bazel-0.3.0-installer-linux-x86_64.sh"
-  - sudo "./bazel-0.3.0-installer-linux-x86_64.sh"
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      # don't actually need sudo, but I *do* want to test with bazel sandboxing
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - pkg-config
+            - zip
+            - g++
+            - zlib1g-dev
+            - unzip
+      before_script:
+        - wget "https://github.com/bazelbuild/bazel/releases/download/0.3.0/bazel-0.3.0-installer-linux-x86_64.sh"
+        - chmod +x "bazel-0.3.0-installer-linux-x86_64.sh"
+        - ./bazel-0.3.0-installer-linux-x86_64.sh --user
+    - os: osx
+      osx_image: xcode7.3
+      before_script:
+        - wget "https://github.com/bazelbuild/bazel/releases/download/0.3.0/bazel-0.3.0-installer-darwin-x86_64.sh"
+        - chmod +x "bazel-0.3.0-installer-darwin-x86_64.sh"
+        - ./bazel-0.3.0-installer-darwin-x86_64.sh --user
 
 script:
   - bazel build //...

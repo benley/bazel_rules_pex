@@ -17,10 +17,17 @@ genrule(
     executable = True,
     cmd = """
         OUTDIR=$$(cd $(@D) && pwd)
-        $(location @virtualenv//:virtualenv) --no-download --quiet venv
-        _python="$$PWD/venv/bin/python"
+        # Workaround really long shebang lines breaking on linux:
+        # Use a /tmp path, but keep the actual venv inside the bazel outdir.
+        # Avoids having to worry about cleanup, even if sandboxing is off.
+        TMPF=$$(mktemp)
+        ln -sf "$$OUTDIR" "$$TMPF"
+        VENV="$${TMPF}/venv"
 
-        venv/bin/pip install pex \
+        $(location @virtualenv//:virtualenv) --no-download --quiet "$$VENV"
+        PYTHON="$$VENV/bin/python"
+
+        $$VENV/bin/pip install pex \
             --quiet --no-cache-dir --no-index --build $(@D)/pexbuild \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file))
@@ -29,10 +36,10 @@ genrule(
         # which is discouraged by Bazel (and annoying)
         cp -r $$(dirname $(location wrapper/setup.py)) $(@D)/.pex_wrapper
         ( cd $(@D)/.pex_wrapper
-          $$_python setup.py --quiet sdist --dist-dir $$OUTDIR )
+          $$PYTHON setup.py --quiet sdist --dist-dir $$OUTDIR )
 
         # Use the bootstrapped pex to build pex_wrapper.pex
-        venv/bin/pex pex_wrapper \
+        $$VENV/bin/pex pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
             --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \

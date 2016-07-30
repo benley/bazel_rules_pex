@@ -226,8 +226,8 @@ def _pex_binary_impl(ctx):
 
   # TODO(benley): is there any reason to generate/include transitive runfiles?
   return struct(files = set([executable]),
-                #runfiles = ctx.runfiles(transitive_files = set(_inputs))
-                )
+                runfiles = ctx.runfiles(collect_data = True,
+                                        transitive_files = set(_inputs)))
 
 
 def _pex_pytest_impl(ctx):
@@ -253,6 +253,7 @@ def _pex_pytest_impl(ctx):
       files = set([executable]),
       runfiles = ctx.runfiles(
           transitive_files = set(_inputs),
+          collect_data = True,
           collect_default = True
       )
   )
@@ -372,7 +373,7 @@ _pytest_pex_test = rule(
 )
 
 
-def pex_pytest(name, srcs, deps=[], eggs=[],
+def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
                args=[],
                flaky=False,
                local=None,
@@ -399,14 +400,15 @@ def pex_pytest(name, srcs, deps=[], eggs=[],
     srcs: List of files containing tests that should be run.
   """
   if "main" in kwargs:
-    fail("Specifying a `main` file makes no sense for pytest_pex_test.")
+    fail("Specifying a `main` file makes no sense for pex_pytest.")
   if "entrypoint" in kwargs:
-    fail("Do not specify `entrypoint` for pytest_pex_test.")
+    fail("Do not specify `entrypoint` for pex_pytest.")
 
   pex_binary(
       name = "%s_runner" % name,
       srcs = srcs,
       deps = deps,
+      data = data,
       eggs = eggs + [
           "//external:wheel/pytest",
           "//external:wheel/py",
@@ -418,6 +420,7 @@ def pex_pytest(name, srcs, deps=[], eggs=[],
       name = name,
       runner = ":%s_runner" % name,
       args = args,
+      data = data,
       flaky = flaky,
       local = local,
       size = size,

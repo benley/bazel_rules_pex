@@ -30,7 +30,7 @@ Add something like this to your WORKSPACE file:
     git_repository(
         name = "io_bazel_rules_pex",
         remote = "https://github.com/benley/bazel_rules_pex.git",
-        tag = "0.2.1",
+        tag = "0.2.2",
     )
     load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
     pex_repositories()
@@ -53,7 +53,7 @@ so that Bazel can find your `prelude_bazel` file.
 ## pex_pytest
 
 <pre>
-pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>, <a href="#pex_pytest.eggs">eggs</a>, <a href="#pex_pytest.args">args</a>, <a href="#pex_pytest.flaky">flaky</a>, <a href="#pex_pytest.local">local</a>, <a href="#pex_pytest.size">size</a>, <a href="#pex_pytest.timeout">timeout</a>)
+pex_pytest(<a href="#pex_pytest.name">name</a>, <a href="#pex_pytest.srcs">srcs</a>, <a href="#pex_pytest.deps">deps</a>, <a href="#pex_pytest.eggs">eggs</a>, <a href="#pex_pytest.data">data</a>, <a href="#pex_pytest.args">args</a>, <a href="#pex_pytest.flaky">flaky</a>, <a href="#pex_pytest.local">local</a>, <a href="#pex_pytest.size">size</a>, <a href="#pex_pytest.timeout">timeout</a>)
 </pre>
 
 A variant of pex_test that uses py.test to run one or more sets of tests.
@@ -105,6 +105,13 @@ Exceptions are `main` and `entrypoint`, which cannot be used with this macro.
     </tr>
     <tr id="pex_pytest.eggs">
       <td><code>eggs</code></td>
+      <td>
+        <p><code>List of strings; Optional</code></p>
+        
+      </td>
+    </tr>
+    <tr id="pex_pytest.data">
+      <td><code>data</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
         

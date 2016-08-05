@@ -37,13 +37,10 @@ genrule(
         # Work around setuptools insistance on writing to the source directory,
         # which is discouraged by Bazel (and annoying)
         cp -r $$(dirname $(location wrapper/setup.py)) $(@D)/.pex_wrapper
-        ( cd $(@D)/.pex_wrapper
-          $$PYTHON setup.py --quiet sdist --dist-dir $$OUTDIR )
 
         # Use the bootstrapped pex to build pex_wrapper.pex
-        $$VENV/bin/pex pex_wrapper \
+        $$VENV/bin/pex $(@D)/.pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
-            --find-links $$OUTDIR \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file)) \
             --find-links $$(dirname $(location @requests_src//file)) \

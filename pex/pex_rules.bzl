@@ -235,13 +235,14 @@ def _pex_pytest_impl(ctx):
   #                But you should also stop wanting that.
   test_runner = ctx.executable.runner
   test_files = set(ctx.files.srcs)
-  test_run_args = cmd_helper.join_paths(" ", test_files)
+  test_run_args = "${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} "
+  test_run_args += cmd_helper.join_paths(" ", test_files)
 
   executable = ctx.outputs.executable
   ctx.file_action(
       output = executable,
       content = '\n'.join([
-          '#!/bin/sh',
+          '#!/usr/bin/env bash',
           'PYTHONDONTWRITEBYTECODE=1 %s %s "$@"\n' % (test_runner.short_path,
                                                       test_run_args)
       ])

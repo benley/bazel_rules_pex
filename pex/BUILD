@@ -26,7 +26,7 @@ genrule(
         ln -sf "$$OUTDIR" "$$TMPF"
         VENV="$${TMPF}/venv"
 
-        $(location @virtualenv//:virtualenv) --no-download --quiet "$$VENV"
+        $(location @virtualenv//:virtualenv) --no-download --quiet --clear "$$VENV"
         PYTHON="$$VENV/bin/python"
 
         $$VENV/bin/pip install pex \

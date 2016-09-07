@@ -230,22 +230,29 @@ def _pex_binary_impl(ctx):
                                         transitive_files = set(_inputs)))
 
 
-def _pex_pytest_impl(ctx):
-  # FIXME(benley): This may break on paths with spaces.
-  #                But you should also stop wanting that.
-  test_runner = ctx.executable.runner
-  test_files = set(ctx.files.srcs)
-  test_run_args = "${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} "
-  test_run_args += cmd_helper.join_paths(" ", test_files)
+def _path_to_package(path):
+  if path.endswith(".py"):
+    path = path[0 : len(path) - 3]
+  return ".".join([x for x in path.split("/") if x])
 
+
+def _pex_pytest_impl(ctx):
+  test_runner = ctx.executable.runner
+  test_package = _path_to_package(ctx.label.package)
+  test_files = set(ctx.files.srcs)
   executable = ctx.outputs.executable
+
   ctx.file_action(
       output = executable,
-      content = '\n'.join([
+      content = "\n".join([
           '#!/usr/bin/env bash',
-          'PYTHONDONTWRITEBYTECODE=1 %s %s "$@"\n' % (test_runner.short_path,
-                                                      test_run_args)
-      ])
+          'export PYTHONDONTWRITEBYTECODE=1',
+          'exec %s \\' % test_runner.short_path,
+          '    ${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} \\',
+          '    --junit-prefix="%s" \\' % test_package,
+          '    "$@" \\',
+          '    ',
+      ]) + cmd_helper.join_paths("\\\n    ", test_files) + "\n"
   )
 
   _inputs = test_files + [test_runner]

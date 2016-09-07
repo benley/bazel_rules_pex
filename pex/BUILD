@@ -1,4 +1,4 @@
-exports_files(["pex_rules.bzl"])
+exports_files(["pex_rules.bzl", "testlauncher.sh.template"])
 
 # Can't use pex_binary to build this one, so we have this elaborate ritual:
 genrule(

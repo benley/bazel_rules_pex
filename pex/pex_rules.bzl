@@ -205,11 +205,9 @@ def _pex_binary_impl(ctx):
           "requires-network": "1",
       },
       env = {
-          # FIXME(benley): Setting PATH like this probably is not ideal, but
-          # use_default_shell_env makes it ignore PEX_VERBOSE too, which also
-          # sucks.  use_default_shell_env also potentially makes the build more
-          # susceptible to breakage from things like virtualenv or oddities in
-          # the outer environment.  WHAT TO DO?
+          # TODO(benley): Write a repository rule to pick up certain
+          # PEX-related environment variables (like PEX_VERBOSE) from the
+          # system, and then enable use_default_shell_env.
           'PATH': '/bin:/usr/bin:/usr/local/bin',
           'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
       },
@@ -238,27 +236,24 @@ def _path_to_package(path):
 
 def _pex_pytest_impl(ctx):
   test_runner = ctx.executable.runner
-  test_package = _path_to_package(ctx.label.package)
   test_files = set(ctx.files.srcs)
-  executable = ctx.outputs.executable
+  output_file = ctx.outputs.executable
 
-  ctx.file_action(
-      output = executable,
-      content = "\n".join([
-          '#!/usr/bin/env bash',
-          'export PYTHONDONTWRITEBYTECODE=1',
-          'exec %s \\' % test_runner.short_path,
-          '    ${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} \\',
-          '    --junit-prefix="%s" \\' % test_package,
-          '    "$@" \\',
-          '    ',
-      ]) + cmd_helper.join_paths("\\\n    ", test_files) + "\n"
+  ctx.template_action(
+      template = ctx.file.launcher_template,
+      output = output_file,
+      substitutions = {
+          "%test_runner%": test_runner.short_path,
+          "%test_package%": _path_to_package(ctx.label.package),
+          "%test_files%": cmd_helper.join_paths("\\\n    ", test_files),
+      },
+      executable = True,
   )
 
   _inputs = test_files + [test_runner]
 
   return struct(
-      files = set([executable]),
+      files = set([output_file]),
       runfiles = ctx.runfiles(
           transitive_files = set(_inputs),
           collect_data = True,
@@ -278,8 +273,7 @@ pex_attrs = {
     "data": attr.label_list(allow_files = True,
                             cfg = DATA_CFG),
 
-    # From here down are used internally by pex_binary and pex_*test rules,
-    # not pex_library.
+    # Used by pex_binary and pex_*test, not pex_library:
     "_pexbuilder": attr.label(
         default = Label("//pex:pex_wrapper"),
         allow_files = False,
@@ -376,6 +370,11 @@ _pytest_pex_test = rule(
         "runner": attr.label(
             executable = True,
             mandatory = True,
+        ),
+        "launcher_template": attr.label(
+            allow_files = True,
+            single_file = True,
+            default = Label("//pex:testlauncher.sh.template"),
         ),
     }),
 )

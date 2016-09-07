@@ -4,6 +4,5 @@ export PYTHONDONTWRITEBYTECODE=1
 
 exec %test_runner% \
     ${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} \
-    --junit-prefix="%test_package%" \
     "$@" \
     %test_files%

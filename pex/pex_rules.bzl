@@ -228,12 +228,6 @@ def _pex_binary_impl(ctx):
                                         transitive_files = set(_inputs)))
 
 
-def _path_to_package(path):
-  if path.endswith(".py"):
-    path = path[0 : len(path) - 3]
-  return ".".join([x for x in path.split("/") if x])
-
-
 def _pex_pytest_impl(ctx):
   test_runner = ctx.executable.runner
   test_files = set(ctx.files.srcs)
@@ -244,7 +238,6 @@ def _pex_pytest_impl(ctx):
       output = output_file,
       substitutions = {
           "%test_runner%": test_runner.short_path,
-          "%test_package%": _path_to_package(ctx.label.package),
           "%test_files%": cmd_helper.join_paths("\\\n    ", test_files),
       },
       executable = True,

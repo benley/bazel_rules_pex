@@ -417,8 +417,8 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
       deps = deps,
       data = data,
       eggs = eggs + [
-          "//external:wheel/pytest",
-          "//external:wheel/py",
+          "@pytest_whl//file",
+          "@py_whl//file",
       ],
       entrypoint = "pytest",
       **kwargs
@@ -444,20 +444,10 @@ def pex_repositories():
       sha256 = 'ccc23b4aab3ef3e19e731de9baca73f3b1a7e610d9ec65b28c36a5a3305f0349'
   )
 
-  native.bind(
-      name = "wheel/pytest",
-      actual = "@pytest_whl//file",
-  )
-
   native.http_file(
       name = 'py_whl',
       url = 'https://pypi.python.org/packages/19/f2/4b71181a49a4673a12c8f5075b8744c5feb0ed9eba352dd22512d2c04d47/py-1.4.31-py2.py3-none-any.whl',
       sha256 = '4a3e4f3000c123835ac39cab5ccc510642153bc47bc1f13e2bbb53039540ae69'
-  )
-
-  native.bind(
-      name = "wheel/py",
-      actual = "@py_whl//file",
   )
 
   native.http_file(

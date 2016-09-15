@@ -120,7 +120,7 @@ def _write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
        'resources:\n%s' % _textify_pex_input(resources),
        'nativeLibraries:\n',
        'prebuiltLibraries:\n%s' % _textify_pex_input(prebuilt_libs)
-      ])
+      ]) + '\n'
 
 
 def _make_manifest(ctx, output):
@@ -136,7 +136,7 @@ def _make_manifest(ctx, output):
     pex_prebuilt_libs[f.path] = f.path
 
   for f in py.transitive_data_files:
-    pex_resources[f.short_path] = f.path
+    pex_resources[f.path] = f.path
 
   manifest_text = _write_pex_manifest_text(pex_modules,
                                            pex_prebuilt_libs,

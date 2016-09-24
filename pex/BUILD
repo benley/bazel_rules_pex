@@ -11,6 +11,7 @@ genrule(
         "@wheel_src//file",
         "@pex_src//file",
         "@requests_src//file",
+        "pex.tar",
     ],
     tools = ["@virtualenv//:virtualenv"],
     outs = ["pex_wrapper.pex"],
@@ -29,9 +30,8 @@ genrule(
         $(location @virtualenv//:virtualenv) --no-download --quiet --clear "$$VENV"
         PYTHON="$$VENV/bin/python"
 
-        $$VENV/bin/pip install pex \
+        $$VENV/bin/pip install $(location pex.tar) \
             --quiet --no-cache-dir --no-index --build $(@D)/pexbuild \
-            --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_src//file))
 
         # Work around setuptools insistance on writing to the source directory,
@@ -41,10 +41,29 @@ genrule(
         # Use the bootstrapped pex to build pex_wrapper.pex
         $$VENV/bin/pex $(@D)/.pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
-            --find-links $$(dirname $(location @pex_src//file)) \
+            --find-links $$(dirname $(location pex.tar)) \
             --find-links $$(dirname $(location @setuptools_src//file)) \
             --find-links $$(dirname $(location @requests_src//file)) \
             --find-links $$(dirname $(location @wheel_src//file))
     """,
     visibility = ["//visibility:public"],
+)
+
+# This is _not_ deterministic; the tar will have all sorts of timestamps and
+# file ownerships and stuff.  I don't think those will end up affecting
+# anything since it's just an intermediate object.
+genrule(
+    name = "patched_pex_src",
+    srcs = [
+        "alter_sys.patch",
+        "@pex_src//file",
+    ],
+    outs = ["pex.tar"],
+    cmd = """
+      mkdir -p tmp
+      tar --strip-components 1 -C tmp -xzf $(location @pex_src//file)
+      patch -d tmp -p1 < $(location alter_sys.patch)
+      tar -C tmp -cf $@ .
+      rm -rf tmp
+    """,
 )

@@ -264,13 +264,14 @@ pex_attrs = {
                             allow_files = egg_file_types),
     "reqs": attr.string_list(),
     "data": attr.label_list(allow_files = True,
-                            cfg = DATA_CFG),
+                            cfg = "data"),
 
     # Used by pex_binary and pex_*test, not pex_library:
     "_pexbuilder": attr.label(
         default = Label("//pex:pex_wrapper"),
         allow_files = False,
-        executable = True
+        executable = True,
+        cfg = "host",
     ),
 }
 
@@ -363,6 +364,7 @@ _pytest_pex_test = rule(
         "runner": attr.label(
             executable = True,
             mandatory = True,
+            cfg = "data",
         ),
         "launcher_template": attr.label(
             allow_files = True,

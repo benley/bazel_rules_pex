@@ -179,6 +179,8 @@ def _pex_binary_impl(ctx):
     arguments += ["--python", ctx.attr.interpreter]
   for egg in py.transitive_egg_files:
     arguments += ["--find-links", egg.dirname]
+  for repo in ctx.attr.pex_repos:
+    arguments += ["--repo", repo]
   arguments += ["--pex-root", ".pex",
                 "--entry-point", main_pkg,
                 "--output-file", deploy_pex.path,
@@ -273,6 +275,7 @@ pex_attrs = {
         executable = True,
         cfg = "host",
     ),
+    "pex_repos": attr.string_list(),
 }
 
 

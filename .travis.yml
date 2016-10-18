@@ -25,6 +25,9 @@ matrix:
         - chmod +x "bazel-0.3.1-installer-darwin-x86_64.sh"
         - ./bazel-0.3.1-installer-darwin-x86_64.sh --user
 
+cache:
+  directories:
+    - $HOME/.bazel/outbase
+
 script:
-  - bazel build //...
-  - bazel test //...
+  - bazel --batch --output_base=${HOME}/.bazel/outbase test //...

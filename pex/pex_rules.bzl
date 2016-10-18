@@ -228,26 +228,34 @@ def _pex_binary_impl(ctx):
                                         transitive_files = set(_inputs)))
 
 
+def _get_runfile_path(ctx, f):
+  """Return the path to f, relative to runfiles."""
+  if ctx.workspace_name:
+    return ctx.workspace_name + "/" + f.short_path
+  else:
+    return f.short_path
+
+
 def _pex_pytest_impl(ctx):
   test_runner = ctx.executable.runner
-  test_files = set(ctx.files.srcs)
   output_file = ctx.outputs.executable
 
+  test_file_paths = ["${RUNFILES}/" + _get_runfile_path(ctx, f) for f in ctx.files.srcs]
   ctx.template_action(
       template = ctx.file.launcher_template,
       output = output_file,
       substitutions = {
-          "%test_runner%": test_runner.short_path,
-          "%test_files%": cmd_helper.join_paths("\\\n    ", test_files),
+          "%test_runner%": _get_runfile_path(ctx, test_runner),
+          "%test_files%": " \\\n    ".join(test_file_paths),
       },
       executable = True,
   )
 
-  _inputs = test_files + [test_runner]
+  _inputs = set(ctx.files.srcs + [test_runner])
 
   return struct(
-      files = set([output_file]),
       runfiles = ctx.runfiles(
+          files = [output_file],
           transitive_files = set(_inputs),
           collect_data = True,
           collect_default = True

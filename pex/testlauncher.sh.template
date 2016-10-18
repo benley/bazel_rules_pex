@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+set -eu
+RUNFILES="${TEST_SRCDIR:-${BASH_SOURCE[0]}.runfiles}"
+export HOME="${HOME:-${TEST_TMPDIR}}"
 
 export PYTHONDONTWRITEBYTECODE=1
 
-exec %test_runner% \
+exec "${RUNFILES}/%test_runner%" \
     ${XML_OUTPUT_FILE:+--junit-xml=$XML_OUTPUT_FILE} \
     "$@" \
     %test_files%

@@ -179,11 +179,13 @@ def _pex_binary_impl(ctx):
     arguments += ["--python", ctx.attr.interpreter]
   for egg in py.transitive_egg_files:
     arguments += ["--find-links", egg.dirname]
-  arguments += ["--pex-root", ".pex",
-                "--entry-point", main_pkg,
-                "--output-file", deploy_pex.path,
-                "--cache-dir", ".pex/build",
-                manifest_file.path]
+  arguments += [
+      "--pex-root", ".pex",  # May be redundant since we also set PEX_ROOT
+      "--entry-point", main_pkg,
+      "--output-file", deploy_pex.path,
+      "--cache-dir", ".pex/build",
+      manifest_file.path,
+  ]
 
   # form the inputs to pex builder
   _inputs = (
@@ -207,12 +209,14 @@ def _pex_binary_impl(ctx):
       env = {
           # TODO(benley): Write a repository rule to pick up certain
           # PEX-related environment variables (like PEX_VERBOSE) from the
-          # system, and then enable use_default_shell_env.
+          # system.
+          # Also, what if python is actually in /opt or something?
           'PATH': '/bin:/usr/bin:/usr/local/bin',
           'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
+          'PEX_ROOT': '.pex',  # So pex doesn't try to unpack into $HOME/.pex
       },
-      #use_default_shell_env = True,
-      arguments = arguments)
+      arguments = arguments,
+  )
 
   # TODO(benley): what's the point of the separate deploy pex if it's just a
   #               duplicate of the executable?

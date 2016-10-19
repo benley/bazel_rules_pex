@@ -144,7 +144,8 @@ def _make_manifest(ctx, output):
                                            py.transitive_reqs)
   ctx.file_action(
       output = output,
-      content = manifest_text)
+      content = manifest_text,
+  )
 
 
 def _pex_binary_impl(ctx):
@@ -222,9 +223,11 @@ def _pex_binary_impl(ctx):
   #               duplicate of the executable?
   executable = ctx.outputs.executable
   ctx.action(
+      mnemonic = "LinkPex",
       inputs = [deploy_pex],
       outputs = [executable],
-      command = "cp %s %s" % (deploy_pex.path, executable.path))
+      command = "ln -f %s %s" % (deploy_pex.path, executable.path),
+  )
 
   # TODO(benley): is there any reason to generate/include transitive runfiles?
   return struct(files = set([executable]),

@@ -123,20 +123,26 @@ def _write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
       ]) + '\n'
 
 
-def _make_manifest(ctx, output):
-  py = _collect_transitive(ctx)
+def _make_manifest(ctx, py, output):
   pex_modules = {}
   pex_prebuilt_libs = {}
   pex_resources = {}
   pex_requirements = []
   for f in py.transitive_sources:
-    pex_modules[f.short_path] = f.path
+    dpath = f.short_path
+    if dpath.startswith("../"):
+      dpath = dpath[3:]
+    pex_modules[dpath] = f.path
 
   for f in py.transitive_egg_files:
+    # Dest path doesn't matter for eggs/wheels
     pex_prebuilt_libs[f.path] = f.path
 
   for f in py.transitive_data_files:
-    pex_resources[f.path] = f.path
+    dpath = f.short_path
+    if dpath.startswith("../"):
+      dpath = dpath[3:]
+    pex_resources[dpath] = f.path
 
   manifest_text = _write_pex_manifest_text(pex_modules,
                                            pex_prebuilt_libs,
@@ -165,11 +171,11 @@ def _pex_binary_impl(ctx):
   deploy_pex = ctx.new_file(
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
 
+  py = _collect_transitive(ctx)
+
   manifest_file = ctx.new_file(
       ctx.configuration.bin_dir, deploy_pex, '.manifest')
-  _make_manifest(ctx, manifest_file)
-
-  py = _collect_transitive(ctx)
+  _make_manifest(ctx, py, manifest_file)
 
   pexbuilder = ctx.executable._pexbuilder
 

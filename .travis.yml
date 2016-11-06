@@ -42,4 +42,4 @@ cache:
     - $HOME/.bazel/outbase
 
 script:
-  - bazel --batch --output_base="${HOME}/.bazel/outbase" test //...
+  - bazel --batch --output_base="${HOME}/.bazel/outbase" test //... --test_output=errors

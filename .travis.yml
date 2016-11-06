@@ -8,11 +8,6 @@ os:
   - linux
   - osx
 
-matrix:
-  allow_failures:
-    - os: osx
-      env: BAZEL_VERSION=0.4.0
-
 # Only affects os=linux
 dist: trusty
 

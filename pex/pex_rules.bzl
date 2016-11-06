@@ -232,7 +232,10 @@ def _pex_binary_impl(ctx):
       mnemonic = "LinkPex",
       inputs = [deploy_pex],
       outputs = [executable],
-      command = "ln -f %s %s" % (deploy_pex.path, executable.path),
+      command = "ln -f {pex} {exe} 2>/dev/null || cp -f {pex} {exe}".format(
+          pex = deploy_pex.path,
+          exe = executable.path,
+      ),
   )
 
   # TODO(benley): is there any reason to generate/include transitive runfiles?

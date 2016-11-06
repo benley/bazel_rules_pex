@@ -96,7 +96,12 @@ def main():
             try:
                 pex_builder.add_source(dereference_symlinks(src), dst)
             except OSError as err:
-                raise Exception("Failed to add %s: %s" % (src, err))
+                # Maybe we just can't use hardlinks? Try again.
+                if not pex_builder._copy:
+                    pex_builder._copy = True
+                    pex_builder.add_source(dereference_symlinks(src), dst)
+                else:
+                    raise Exception("Failed to add %s: %s" % (src, err))
 
         # Add resources from the manifest
         for dst, src in manifest.get('resources', {}).items():

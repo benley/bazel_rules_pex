@@ -107,40 +107,34 @@ def _pex_library_impl(ctx):
   )
 
 
-def _textify_pex_input(input_map):
-  """Converts map to text format. Each file on separate line."""
-  kv_pairs = ['\t%s:%s' % (pkg, input_map[pkg]) for pkg in input_map.keys()]
-  return '\n'.join(kv_pairs)
+def _gen_manifest(py, runfiles):
+  """Generate a manifest for pex_wrapper.
 
+  Returns:
+      struct(
+          modules = [struct(src = "path_on_disk", dest = "path_in_pex"), ...],
+          requirements = ["pypi_package", ...],
+          prebuiltLibraries = ["path_on_disk", ...],
+      )
+  """
 
-def _write_pex_manifest_text(files, eggs, requirements):
-  return '\n'.join([
-      'modules:\n%s' % _textify_pex_input(files),
-      'requirements:\n%s' % _textify_pex_input(dict(zip(requirements,requirements))),
-      'prebuiltLibraries:\n%s' % _textify_pex_input(eggs)
-  ]) + '\n'
-
-
-def _make_manifest(ctx, py, runfiles, output):
-  pex_files = {}
-  pex_eggs = {}
-
-  for f in py.transitive_eggs:
-    # Dest path doesn't matter for eggs/wheels
-    pex_eggs[f.path] = f.path
+  pex_files = []
 
   for f in runfiles.files:
     dpath = f.short_path
     if dpath.startswith("../"):
       dpath = dpath[3:]
-    pex_files[dpath] = f.path
+    pex_files.append(
+        struct(
+            src = f.path,
+            dest = dpath,
+        ),
+    )
 
-  manifest_text = _write_pex_manifest_text(pex_files,
-                                           pex_eggs,
-                                           py.transitive_reqs)
-  ctx.file_action(
-      output = output,
-      content = manifest_text,
+  return struct(
+      modules = pex_files,
+      requirements = list(py.transitive_reqs),
+      prebuiltLibraries = [f.path for f in py.transitive_eggs],
   )
 
 
@@ -174,9 +168,14 @@ def _pex_binary_impl(ctx):
   )
 
   manifest_file = ctx.new_file(
-      ctx.configuration.bin_dir, deploy_pex, '.manifest')
+      ctx.configuration.bin_dir, deploy_pex, '_manifest')
 
-  _make_manifest(ctx, py, runfiles, manifest_file)
+  manifest = _gen_manifest(py, runfiles)
+
+  ctx.file_action(
+      output = manifest_file,
+      content = manifest.to_json(),
+  )
 
   pexbuilder = ctx.executable._pexbuilder
 

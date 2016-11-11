@@ -67,8 +67,8 @@ def _collect_transitive_sources(ctx):
 def _collect_transitive_eggs(ctx):
   transitive_eggs = set(order="compile")
   for dep in ctx.attr.deps:
-    if hasattr(dep.py, "transitive_egg_files"):
-      transitive_eggs += dep.py.transitive_egg_files
+    if hasattr(dep.py, "transitive_eggs"):
+      transitive_eggs += dep.py.transitive_eggs
   transitive_eggs += egg_file_types.filter(ctx.files.eggs)
   return transitive_eggs
 
@@ -82,79 +82,65 @@ def _collect_transitive_reqs(ctx):
   return transitive_reqs
 
 
-def _collect_transitive_data(ctx):
-  transitive_data = set(order="compile")
-  for dep in ctx.attr.deps:
-    if hasattr(dep.py, "transitive_data_files"):
-      transitive_data += dep.py.transitive_data_files
-  transitive_data += ctx.files.data
-  return transitive_data
-
-
 def _collect_transitive(ctx):
   return struct(
+      # These rules don't use transitive_sources internally; it's just here for
+      # parity with the native py_library rule type.
       transitive_sources = _collect_transitive_sources(ctx),
-      transitive_egg_files = _collect_transitive_eggs(ctx),
+      transitive_eggs = _collect_transitive_eggs(ctx),
       transitive_reqs = _collect_transitive_reqs(ctx),
-      transitive_data_files = _collect_transitive_data(ctx),
+      # uses_shared_libraries = ... # native py_library has this. What is it?
   )
 
 
 def _pex_library_impl(ctx):
+  transitive_files = set(ctx.files.srcs)
+  for dep in ctx.attr.deps:
+    transitive_files += dep.default_runfiles.files
   return struct(
       files = set(),
       py = _collect_transitive(ctx),
+      runfiles = ctx.runfiles(
+          collect_default = True,
+          transitive_files = set(transitive_files),
+      )
   )
 
 
-def _textify_pex_input(input_map):
-  """Converts map to text format. Each file on separate line."""
-  kv_pairs = ['\t%s:%s' % (pkg, input_map[pkg]) for pkg in input_map.keys()]
-  return '\n'.join(kv_pairs)
+def _gen_manifest(py, runfiles):
+  """Generate a manifest for pex_wrapper.
 
+  Returns:
+      struct(
+          modules = [struct(src = "path_on_disk", dest = "path_in_pex"), ...],
+          requirements = ["pypi_package", ...],
+          prebuiltLibraries = ["path_on_disk", ...],
+      )
+  """
 
-def _write_pex_manifest_text(modules, prebuilt_libs, resources, requirements):
-  return '\n'.join(
-      ['modules:\n%s' % _textify_pex_input(modules),
-       'requirements:\n%s' % _textify_pex_input(dict(zip(requirements,requirements))),
-       'resources:\n%s' % _textify_pex_input(resources),
-       'nativeLibraries:\n',
-       'prebuiltLibraries:\n%s' % _textify_pex_input(prebuilt_libs)
-      ]) + '\n'
+  pex_files = []
 
-
-def _make_manifest(ctx, py, output):
-  pex_modules = {}
-  pex_prebuilt_libs = {}
-  pex_resources = {}
-  pex_requirements = []
-  for f in py.transitive_sources:
+  for f in runfiles.files:
     dpath = f.short_path
     if dpath.startswith("../"):
       dpath = dpath[3:]
-    pex_modules[dpath] = f.path
+    pex_files.append(
+        struct(
+            src = f.path,
+            dest = dpath,
+        ),
+    )
 
-  for f in py.transitive_egg_files:
-    # Dest path doesn't matter for eggs/wheels
-    pex_prebuilt_libs[f.path] = f.path
-
-  for f in py.transitive_data_files:
-    dpath = f.short_path
-    if dpath.startswith("../"):
-      dpath = dpath[3:]
-    pex_resources[dpath] = f.path
-
-  manifest_text = _write_pex_manifest_text(pex_modules,
-                                           pex_prebuilt_libs,
-                                           pex_resources,
-                                           py.transitive_reqs)
-  ctx.file_action(
-      output = output,
-      content = manifest_text,
+  return struct(
+      modules = pex_files,
+      requirements = list(py.transitive_reqs),
+      prebuiltLibraries = [f.path for f in py.transitive_eggs],
   )
 
 
 def _pex_binary_impl(ctx):
+  transitive_files = set(ctx.files.srcs)
+
   if ctx.attr.entrypoint and ctx.file.main:
     fail("Please specify either entrypoint or main, not both.")
   if ctx.attr.entrypoint:
@@ -167,15 +153,29 @@ def _pex_binary_impl(ctx):
   if main_file:
     # Translate main_file's short path into a python module name
     main_pkg = main_file.short_path.replace('/', '.')[:-3]
+    transitive_files += [main_file]
 
   deploy_pex = ctx.new_file(
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
 
   py = _collect_transitive(ctx)
 
+  for dep in ctx.attr.deps:
+    transitive_files += dep.default_runfiles.files
+  runfiles = ctx.runfiles(
+      collect_default = True,
+      transitive_files = transitive_files,
+  )
+
   manifest_file = ctx.new_file(
-      ctx.configuration.bin_dir, deploy_pex, '.manifest')
-  _make_manifest(ctx, py, manifest_file)
+      ctx.configuration.bin_dir, deploy_pex, '_manifest')
+
+  manifest = _gen_manifest(py, runfiles)
+
+  ctx.file_action(
+      output = manifest_file,
+      content = manifest.to_json(),
+  )
 
   pexbuilder = ctx.executable._pexbuilder
 
@@ -184,7 +184,7 @@ def _pex_binary_impl(ctx):
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
   if ctx.attr.interpreter:
     arguments += ["--python", ctx.attr.interpreter]
-  for egg in py.transitive_egg_files:
+  for egg in py.transitive_eggs:
     arguments += ["--find-links", egg.dirname]
   arguments += [
       "--pex-root", ".pex",  # May be redundant since we also set PEX_ROOT
@@ -197,13 +197,9 @@ def _pex_binary_impl(ctx):
   # form the inputs to pex builder
   _inputs = (
       [manifest_file] +
-      list(py.transitive_sources) +
-      list(py.transitive_egg_files) +
-      list(py.transitive_data_files) +
-      list(ctx.attr._pexbuilder.data_runfiles.files)
+      list(runfiles.files) +
+      list(py.transitive_eggs)
   )
-  if main_file:
-    _inputs.append(main_file)
 
   ctx.action(
       mnemonic = "PexPython",
@@ -225,9 +221,11 @@ def _pex_binary_impl(ctx):
       arguments = arguments,
   )
 
-  # TODO(benley): what's the point of the separate deploy pex if it's just a
-  #               duplicate of the executable?
   executable = ctx.outputs.executable
+
+  # There isn't much point in having both foo.pex and foo as identical pex
+  # files, but someone is probably relying on that behaviour by now so we might
+  # as well keep doing it.
   ctx.action(
       mnemonic = "LinkPex",
       inputs = [deploy_pex],
@@ -238,10 +236,10 @@ def _pex_binary_impl(ctx):
       ),
   )
 
-  # TODO(benley): is there any reason to generate/include transitive runfiles?
-  return struct(files = set([executable]),
-                runfiles = ctx.runfiles(collect_data = True,
-                                        transitive_files = set(_inputs)))
+  return struct(
+      files = set([executable]),  # Which files show up in cmdline output
+      runfiles = runfiles,
+  )
 
 
 def _get_runfile_path(ctx, f):
@@ -267,13 +265,14 @@ def _pex_pytest_impl(ctx):
       executable = True,
   )
 
-  _inputs = set(ctx.files.srcs + [test_runner])
+  transitive_files = set(ctx.files.srcs + [test_runner])
+  for dep in ctx.attr.deps:
+    transitive_files += dep.default_runfiles
 
   return struct(
       runfiles = ctx.runfiles(
           files = [output_file],
-          transitive_files = set(_inputs),
-          collect_data = True,
+          transitive_files = transitive_files,
           collect_default = True
       )
   )
@@ -293,7 +292,6 @@ pex_attrs = {
     # Used by pex_binary and pex_*test, not pex_library:
     "_pexbuilder": attr.label(
         default = Label("//pex:pex_wrapper"),
-        allow_files = False,
         executable = True,
         cfg = "host",
     ),

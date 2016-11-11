@@ -6,6 +6,7 @@ from pex.common import safe_delete
 from pex.tracer import TRACER
 from pex.variables import ENV
 
+import json
 import os
 import sys
 
@@ -23,39 +24,17 @@ def dereference_symlinks(src):
 
 
 def parse_manifest(manifest_text):
-    """ Parse a pex manifest.
+    """Parse a json manifest.
 
     Manifest format:
-
-        modules:
-        	key:value
-        	...
-        resources:
-        	key:value
-        	...
-        nativeLibraries:
-        	key:value
-        	...
-        prebuiltLibraries:
-        	key:value
-        	...
-
-    Indents are *tabs*.  Sections may be left blank.
+      {
+        "modules": [ {"src": "path_on_disk", "dest": "path_in_pex"}, ... ],
+        "resources": [ {"src": "path_on_disk", "dest": "path_in_pex"}, ... ],
+        "prebuiltLibraries": [ "path1", "path2", ... ],
+        "requirements": [ "thing1", "thing2==version", ... ],
+      }
     """
-    lines = manifest_text.split('\n')
-    manifest = {}
-    curr_key = ''
-    for line in lines:
-        tokens = line.split(':')
-        if len(tokens) != 2:
-            continue
-        elif not line.startswith('\t'):
-            manifest[tokens[0]] = {}
-            curr_key = tokens[0]
-        else:
-            # line is of form <tab>key:value
-            manifest[curr_key][tokens[0][1:]] = tokens[1]
-    return manifest
+    return json.loads(manifest_text)
 
 
 def main():
@@ -64,6 +43,7 @@ def main():
 
     manifest_file = args[1]
     manifest_text = open(manifest_file, 'r').read()
+    manifest = parse_manifest(manifest_text)
 
     if poptions.pex_root:
         ENV.set('PEX_ROOT', poptions.pex_root)
@@ -72,14 +52,10 @@ def main():
 
     if poptions.cache_dir:
         poptions.cache_dir = pexbin.make_relative_to_root(poptions.cache_dir)
-    poptions.interpreter_cache_dir = pexbin.make_relative_to_root(poptions.interpreter_cache_dir)
+    poptions.interpreter_cache_dir = pexbin.make_relative_to_root(
+        poptions.interpreter_cache_dir)
 
-    if manifest_text.startswith('"') and manifest_text.endswith('"'):
-        manifest_text = manifest_text[1:len(manifest_text) - 1]
-
-    manifest = parse_manifest(manifest_text)
-
-    reqs = manifest.get('requirements', {}).keys()
+    reqs = manifest.get('requirements', [])
 
     with ENV.patch(PEX_VERBOSE=str(poptions.verbosity)):
         with TRACER.timed('Building pex'):
@@ -87,7 +63,10 @@ def main():
                                            resolver_options_builder)
 
         # Add source files from the manifest
-        for dst, src in manifest.get('modules', {}).items():
+        for modmap in manifest.get('modules', []):
+            src = modmap.get('src')
+            dst = modmap.get('dest')
+
             # NOTE(agallagher): calls the `add_source` and `add_resource` below
             # hard-link the given source into the PEX temp dir.  Since OS X and
             # Linux behave different when hard-linking a source that is a
@@ -101,18 +80,20 @@ def main():
                     pex_builder._copy = True
                     pex_builder.add_source(dereference_symlinks(src), dst)
                 else:
-                    raise Exception("Failed to add %s: %s" % (src, err))
+                    raise RuntimeError("Failed to add %s: %s" % (src, err))
 
         # Add resources from the manifest
-        for dst, src in manifest.get('resources', {}).items():
+        for reqmap in manifest.get('resources', []):
+            src = reqmap.get('src')
+            dst = reqmap.get('dest')
             pex_builder.add_resource(dereference_symlinks(src), dst)
 
         # Add eggs/wheels from the manifest
-        for req in manifest.get('prebuiltLibraries', []):
+        for egg in manifest.get('prebuiltLibraries', []):
             try:
-                pex_builder.add_dist_location(req)
+                pex_builder.add_dist_location(egg)
             except Exception as err:
-                raise Exception("Failed to add %s: %s" % (req, err))
+                raise RuntimeError("Failed to add %s: %s" % (egg, err))
 
         # TODO(mikekap): Do something about manifest['nativeLibraries'].
 

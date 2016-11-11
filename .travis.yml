@@ -12,7 +12,7 @@ os:
 dist: trusty
 
 # Only affects os=osx
-osx_image: xcode7.3
+osx_image: xcode8
 
 # Necessary to test with sandboxing (we don't need root, just need a real VM)
 sudo: required
@@ -42,4 +42,4 @@ cache:
     - $HOME/.bazel/outbase
 
 script:
-  - bazel --batch --output_base="${HOME}/.bazel/outbase" test //...
+  - bazel --batch --output_base="${HOME}/.bazel/outbase" test //... --test_output=errors

@@ -439,6 +439,7 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
           "@py_whl//file",
       ],
       entrypoint = "pytest",
+      testonly = True,
       **kwargs
   )
   _pytest_pex_test(

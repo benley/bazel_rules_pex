@@ -48,6 +48,7 @@ so that Bazel can find your `prelude_bazel` file.
 
 pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
+req_file_types = FileType([".txt"])
 
 # As much as I think this test file naming convention is a good thing, it's
 # probably a bad idea to impose it as a policy to all OSS users of these rules,
@@ -80,6 +81,16 @@ def _collect_transitive_reqs(ctx):
       transitive_reqs += dep.py.transitive_reqs
   transitive_reqs += ctx.attr.reqs
   return transitive_reqs
+
+
+def _collect_repos(ctx):
+  repos = {}
+  for dep in ctx.attr.deps:
+    if hasattr(dep.py, "repos"):
+      repos += dep.py.repos
+  for file in egg_file_types.filter(ctx.files.repos):
+    repos.update({file.dirname : True})
+  return repos.keys()
 
 
 def _collect_transitive(ctx):
@@ -159,6 +170,7 @@ def _pex_binary_impl(ctx):
       ctx.configuration.bin_dir, ctx.outputs.executable, '.pex')
 
   py = _collect_transitive(ctx)
+  repos = _collect_repos(ctx)
 
   for dep in ctx.attr.deps:
     transitive_files += dep.default_runfiles.files
@@ -184,6 +196,12 @@ def _pex_binary_impl(ctx):
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
   if ctx.attr.interpreter:
     arguments += ["--python", ctx.attr.interpreter]
+  if ctx.attr.no_index:
+    arguments += ["--no-index"]
+  for req_file in ctx.files.req_files:
+    arguments += ["--requirement", req_file.path]
+  for repo in repos:
+    arguments += ["--repo", repo]
   for egg in py.transitive_eggs:
     arguments += ["--find-links", egg.dirname]
   arguments += [
@@ -286,6 +304,11 @@ pex_attrs = {
     "eggs": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
                             allow_files = egg_file_types),
     "reqs": attr.string_list(),
+    "req_files": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
+                            allow_files = req_file_types),
+    "no_index": attr.bool(default=False),
+    "repos": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
+                            allow_files = egg_file_types),
     "data": attr.label_list(allow_files = True,
                             cfg = "data"),
 
@@ -349,6 +372,17 @@ Args:
     the transitive python dependencies and fetch them from pypi.
 
     It is recommended that you use `eggs` instead where possible.
+
+  req_files: Add requirements from the given requirements files. Must be provided as labels.
+
+    This feature will reduce build determinism!  It tells pex to resolve all
+    the transitive python dependencies and fetch them from pypi.
+
+    It is recommended that you use `eggs` or specify `no_index` instead where possible.
+
+  no_index: If True, don't use pypi to resolve dependencies for `reqs` and `req_files`; Default: False
+
+  repos: Additional repository labels (filegroups of wheel/egg files) to look for requirements.
 
   data: Files to include as resources in the final pex binary.
 

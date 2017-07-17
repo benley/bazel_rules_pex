@@ -50,6 +50,20 @@ pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
 req_file_types = FileType([".txt"])
 
+# Repos file types according to: https://www.python.org/dev/peps/pep-0527/
+repo_file_types = FileType([
+    ".egg",
+    ".whl",
+    ".tar.gz",
+    ".zip",
+    ".tar",
+    ".tar.bz2",
+    ".tar.xz",
+    ".tar.Z",
+    ".tgz",
+    ".tbz"
+])
+
 # As much as I think this test file naming convention is a good thing, it's
 # probably a bad idea to impose it as a policy to all OSS users of these rules,
 # so I guess let's skip it.
@@ -88,7 +102,7 @@ def _collect_repos(ctx):
   for dep in ctx.attr.deps:
     if hasattr(dep.py, "repos"):
       repos += dep.py.repos
-  for file in egg_file_types.filter(ctx.files.repos):
+  for file in repo_file_types.filter(ctx.files.repos):
     repos.update({file.dirname : True})
   return repos.keys()
 
@@ -308,7 +322,7 @@ pex_attrs = {
                             allow_files = req_file_types),
     "no_index": attr.bool(default=False),
     "repos": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
-                            allow_files = egg_file_types),
+                            allow_files = repo_file_types),
     "data": attr.label_list(allow_files = True,
                             cfg = "data"),
 

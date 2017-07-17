@@ -212,6 +212,8 @@ def _pex_binary_impl(ctx):
     arguments += ["--python", ctx.attr.interpreter]
   if ctx.attr.no_index:
     arguments += ["--no-index"]
+  if ctx.attr.disable_cache:
+    arguments += ["--disable-cache"]
   for req_file in ctx.files.req_files:
     arguments += ["--requirement", req_file.path]
   for repo in repos:
@@ -321,6 +323,7 @@ pex_attrs = {
     "req_files": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
                             allow_files = req_file_types),
     "no_index": attr.bool(default=False),
+    "disable_cache": attr.bool(default=False),
     "repos": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
                             allow_files = repo_file_types),
     "data": attr.label_list(allow_files = True,
@@ -395,6 +398,8 @@ Args:
     It is recommended that you use `eggs` or specify `no_index` instead where possible.
 
   no_index: If True, don't use pypi to resolve dependencies for `reqs` and `req_files`; Default: False
+
+  disable_cache: Disable caching in the pex tool entirely. Default: False
 
   repos: Additional repository labels (filegroups of wheel/egg files) to look for requirements.
 

@@ -50,6 +50,20 @@ pex_file_types = FileType([".py"])
 egg_file_types = FileType([".egg", ".whl"])
 req_file_types = FileType([".txt"])
 
+# Repos file types according to: https://www.python.org/dev/peps/pep-0527/
+repo_file_types = FileType([
+    ".egg",
+    ".whl",
+    ".tar.gz",
+    ".zip",
+    ".tar",
+    ".tar.bz2",
+    ".tar.xz",
+    ".tar.Z",
+    ".tgz",
+    ".tbz"
+])
+
 # As much as I think this test file naming convention is a good thing, it's
 # probably a bad idea to impose it as a policy to all OSS users of these rules,
 # so I guess let's skip it.
@@ -88,7 +102,7 @@ def _collect_repos(ctx):
   for dep in ctx.attr.deps:
     if hasattr(dep.py, "repos"):
       repos += dep.py.repos
-  for file in egg_file_types.filter(ctx.files.repos):
+  for file in repo_file_types.filter(ctx.files.repos):
     repos.update({file.dirname : True})
   return repos.keys()
 
@@ -198,6 +212,8 @@ def _pex_binary_impl(ctx):
     arguments += ["--python", ctx.attr.interpreter]
   if ctx.attr.no_index:
     arguments += ["--no-index"]
+  if ctx.attr.disable_cache:
+    arguments += ["--disable-cache"]
   for req_file in ctx.files.req_files:
     arguments += ["--requirement", req_file.path]
   for repo in repos:
@@ -307,8 +323,9 @@ pex_attrs = {
     "req_files": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
                             allow_files = req_file_types),
     "no_index": attr.bool(default=False),
+    "disable_cache": attr.bool(default=False),
     "repos": attr.label_list(flags = ["DIRECT_COMPILE_TIME_INPUT"],
-                            allow_files = egg_file_types),
+                            allow_files = repo_file_types),
     "data": attr.label_list(allow_files = True,
                             cfg = "data"),
 
@@ -381,6 +398,8 @@ Args:
     It is recommended that you use `eggs` or specify `no_index` instead where possible.
 
   no_index: If True, don't use pypi to resolve dependencies for `reqs` and `req_files`; Default: False
+
+  disable_cache: Disable caching in the pex tool entirely. Default: False
 
   repos: Additional repository labels (filegroups of wheel/egg files) to look for requirements.
 

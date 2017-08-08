@@ -22,7 +22,8 @@ genrule(
         # Workaround really long shebang lines breaking on linux:
         # Use a /tmp path, but keep the actual venv inside the bazel outdir.
         # Avoids having to worry about cleanup, even if sandboxing is off.
-        TMPF=$$(mktemp)
+        # `mktemp -t tmp` is used for older OS X versions.
+        TMPF=$$(mktemp 2>/dev/null || mktemp -t tmp)
         ln -sf "$$OUTDIR" "$$TMPF"
         VENV="$${TMPF}/venv"
 

@@ -2,7 +2,7 @@ genrule(
     name = "README",
     srcs = [":docs"],
     outs = ["README.md"],
-    cmd = "unzip -q $< && mv pex_rules.md $@",
+    cmd = "unzip -q $< && mv pex/pex_rules.md $@",
 )
 
 skylark_doc(
@@ -10,4 +10,3 @@ skylark_doc(
     srcs = ["//pex:pex_rules.bzl"],
     visibility = ["//visibility:public"],
 )
-

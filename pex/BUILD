@@ -7,10 +7,14 @@ genrule(
         "wrapper/setup.py",
         "wrapper/pex_wrapper.py",
         "wrapper/README",
-        "@setuptools_src//file",
+        "@setuptools_whl//file",
         "@wheel_src//file",
         "@pex_src//file",
         "@requests_src//file",
+        "@urllib3_whl//file",
+        "@idna_whl//file",
+        "@certifi_whl//file",
+        "@chardet_whl//file",
     ],
     tools = ["@virtualenv//:virtualenv"],
     outs = ["pex_wrapper.pex"],
@@ -33,7 +37,7 @@ genrule(
         $$VENV/bin/pip install pex \
             --quiet --no-cache-dir --no-index --build $(@D)/pexbuild \
             --find-links $$(dirname $(location @pex_src//file)) \
-            --find-links $$(dirname $(location @setuptools_src//file))
+            --find-links $$(dirname $(location @setuptools_whl//file))
 
         # Work around setuptools insistance on writing to the source directory,
         # which is discouraged by Bazel (and annoying)
@@ -43,8 +47,12 @@ genrule(
         $$VENV/bin/pex $(@D)/.pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
             --find-links $$(dirname $(location @pex_src//file)) \
-            --find-links $$(dirname $(location @setuptools_src//file)) \
+            --find-links $$(dirname $(location @setuptools_whl//file)) \
             --find-links $$(dirname $(location @requests_src//file)) \
+            --find-links $$(dirname $(location @idna_whl//file)) \
+            --find-links $$(dirname $(location @urllib3_whl//file)) \
+            --find-links $$(dirname $(location @certifi_whl//file)) \
+            --find-links $$(dirname $(location @chardet_whl//file)) \
             --find-links $$(dirname $(location @wheel_src//file))
     """,
     visibility = ["//visibility:public"],

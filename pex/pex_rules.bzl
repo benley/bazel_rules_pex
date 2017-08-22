@@ -490,6 +490,7 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
       eggs = eggs + [
           "@pytest_whl//file",
           "@py_whl//file",
+          "@setuptools_whl//file",
       ],
       entrypoint = "pytest",
       testonly = True,
@@ -513,14 +514,14 @@ def pex_repositories():
   """Rules to be invoked from WORKSPACE for remote dependencies."""
   native.http_file(
       name = 'pytest_whl',
-      url = 'https://pypi.python.org/packages/c4/bf/80d1cd053b1c86f6ecb23300fba3a7c572419b5edc155da0f3f104d42775/pytest-3.0.2-py2.py3-none-any.whl',
-      sha256 = '4b0872d00159dd8d7a27c4a45a2be77aac8a6e70c3af9a7c76c040c3e3715b9d'
+      url = 'https://pypi.python.org/packages/e0/1e/d52c6a3a143935410ee33320341ea7bbb770ca8fe89c3d51e18254e0a2ba/pytest-3.2.1-py2.py3-none-any.whl',
+      sha256 = '82c1e44a964ec5922c7c3891787df31c8c4f18b6c97a722df56b6cf20bb38c8a'
   )
 
   native.http_file(
       name = 'py_whl',
-      url = 'https://pypi.python.org/packages/19/f2/4b71181a49a4673a12c8f5075b8744c5feb0ed9eba352dd22512d2c04d47/py-1.4.31-py2.py3-none-any.whl',
-      sha256 = '4a3e4f3000c123835ac39cab5ccc510642153bc47bc1f13e2bbb53039540ae69'
+      url = 'https://pypi.python.org/packages/53/67/9620edf7803ab867b175e4fd23c7b8bd8eba11cb761514dcd2e726ef07da/py-1.4.34-py2.py3-none-any.whl',
+      sha256 = '2ccb79b01769d99115aa600d7eed99f524bf752bba8f041dc1c184853514655a'
   )
 
   native.http_file(
@@ -530,28 +531,52 @@ def pex_repositories():
   )
 
   native.http_file(
-      name = "setuptools_src",
-      url = "https://pypi.python.org/packages/d3/16/21cf5dc6974280197e42d57bf7d372380562ec69aef9bb796b5e2dbbed6e/setuptools-20.10.1.tar.gz",
-      sha256 = "3e59c885f09ed0d631816468e431b347b5103339e77a21cbf56df6283319b5dd",
+      name = "setuptools_whl",
+      url = "https://pypi.python.org/packages/e5/53/92a8ac9d252ec170d9197dcf988f07e02305a06078d7e83a41ba4e3ed65b/setuptools-33.1.1-py2.py3-none-any.whl",
+      sha256 = "4ed8f634b11fbba8c0ba9db01a8d24ad464f97a615889e9780fc74ddec956711",
   )
 
   native.http_file(
       name = "pex_src",
-      url = "https://pypi.python.org/packages/6d/b9/aacedca314f7061f84c021c9eaac9ceac9c57f277e4e9bbb6d998facec8d/pex-1.1.14.tar.gz",
-      sha256 = "2d0f5ec39d61c0ef0f806247d7e2702e5354583df7f232db5d9a3b287173e857",
+      url = "https://pypi.python.org/packages/3e/e8/d306b2d82487113ad188788a61895e7d474fa25823c23e19bb65f904cf30/pex-1.2.9.tar.gz",
+      sha256 = "26b63958d071f6a887b4b9d6230c1c1a1dc721572f5a0e48fd0eac71b0e663a9",
   )
 
   native.http_file(
       name = "requests_src",
-      url = "https://pypi.python.org/packages/2e/ad/e627446492cc374c284e82381215dcd9a0a87c4f6e90e9789afefe6da0ad/requests-2.11.1.tar.gz",
-      sha256 = "5acf980358283faba0b897c73959cecf8b841205bb4b2ad3ef545f46eae1a133",
+      url = "https://pypi.python.org/packages/b0/e1/eab4fc3752e3d240468a8c0b284607899d2fbfb236a56b7377a329aa8d09/requests-2.18.4.tar.gz",
+      sha256 = "9c443e7324ba5b85070c4a818ade28bfabedf16ea10206da1132edaa6dda237e",
+  )
+
+  native.http_file(
+      name = "urllib3_whl",
+      url = "https://pypi.python.org/packages/63/cb/6965947c13a94236f6d4b8223e21beb4d576dc72e8130bd7880f600839b8/urllib3-1.22-py2.py3-none-any.whl",
+      sha256 = "06330f386d6e4b195fbfc736b297f58c5a892e4440e54d294d7004e3a9bbea1b",
+  )
+
+  native.http_file(
+      name = "idna_whl",
+      url = "https://pypi.python.org/packages/27/cc/6dd9a3869f15c2edfab863b992838277279ce92663d334df9ecf5106f5c6/idna-2.6-py2.py3-none-any.whl",
+      sha256 = "8c7309c718f94b3a625cb648ace320157ad16ff131ae0af362c9f21b80ef6ec4",
+  )
+
+  native.http_file(
+      name = "certifi_whl",
+      url = "https://pypi.python.org/packages/40/66/06130724e8205fc8c105db7edb92871c7fff7d31324d7f4405c762624a43/certifi-2017.7.27.1-py2.py3-none-any.whl",
+      sha256 = "54a07c09c586b0e4c619f02a5e94e36619da8e2b053e20f594348c0611803704",
+  )
+
+  native.http_file(
+      name = "chardet_whl",
+      url = "https://pypi.python.org/packages/bc/a9/01ffebfb562e4274b6487b4bb1ddec7ca55ec7510b22e4c51f14098443b8/chardet-3.0.4-py2.py3-none-any.whl",
+      sha256 = "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691",
   )
 
   native.new_http_archive(
       name = "virtualenv",
-      url = "https://pypi.python.org/packages/5c/79/5dae7494b9f5ed061cff9a8ab8d6e1f02db352f3facf907d9eb614fb80e9/virtualenv-15.0.2.tar.gz",
-      sha256 = "fab40f32d9ad298fba04a260f3073505a16d52539a84843cf8c8369d4fd17167",
-      strip_prefix = "virtualenv-15.0.2",
+      url = "https://pypi.python.org/packages/d4/0c/9840c08189e030873387a73b90ada981885010dd9aea134d6de30cd24cb8/virtualenv-15.1.0.tar.gz",
+      sha256 = "02f8102c2436bb03b3ee6dede1919d1dac8a427541652e5ec95171ec8adbc93a",
+      strip_prefix = "virtualenv-15.1.0",
       build_file_content = "\n".join([
           "py_binary(",
           "    name = 'virtualenv',",

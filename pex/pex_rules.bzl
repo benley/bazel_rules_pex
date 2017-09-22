@@ -132,7 +132,7 @@ def _pex_library_impl(ctx):
   )
 
 
-def _gen_manifest(py, runfiles):
+def _gen_manifest(py, runfiles, strip_pex_path_prefixes):
   """Generate a manifest for pex_wrapper.
 
   Returns:
@@ -149,6 +149,12 @@ def _gen_manifest(py, runfiles):
     dpath = f.short_path
     if dpath.startswith("../"):
       dpath = dpath[3:]
+
+    for prefix in strip_pex_path_prefixes:
+      if dpath.startswith(prefix):
+         dpath = dpath[len(prefix):]
+         break
+
     pex_files.append(
         struct(
             src = f.path,
@@ -165,6 +171,7 @@ def _gen_manifest(py, runfiles):
 
 def _pex_binary_impl(ctx):
   transitive_files = set(ctx.files.srcs)
+  strip_pex_path_prefixes = ctx.attr.strip_pex_path_prefixes
 
   if ctx.attr.entrypoint and ctx.file.main:
     fail("Please specify either entrypoint or main, not both.")
@@ -177,7 +184,13 @@ def _pex_binary_impl(ctx):
     main_file = pex_file_types.filter(ctx.files.srcs)[0]
   if main_file:
     # Translate main_file's short path into a python module name
-    main_pkg = main_file.short_path.replace('/', '.')[:-3]
+    main_file_path = main_file.short_path
+    for prefix in strip_pex_path_prefixes:
+      if main_file_path.startswith(prefix):
+         main_file_path = main_file_path[len(prefix):]
+         break
+
+    main_pkg = main_file_path.replace('/', '.')[:-3]
     transitive_files += [main_file]
 
   deploy_pex = ctx.new_file(
@@ -196,7 +209,7 @@ def _pex_binary_impl(ctx):
   manifest_file = ctx.new_file(
       ctx.configuration.bin_dir, deploy_pex, '_manifest')
 
-  manifest = _gen_manifest(py, runfiles)
+  manifest = _gen_manifest(py, runfiles, strip_pex_path_prefixes)
 
   ctx.file_action(
       output = manifest_file,
@@ -328,7 +341,6 @@ pex_attrs = {
                             allow_files = repo_file_types),
     "data": attr.label_list(allow_files = True,
                             cfg = "data"),
-
     # Used by pex_binary and pex_*test, not pex_library:
     "_pexbuilder": attr.label(
         default = Label("//pex:pex_wrapper"),
@@ -357,6 +369,7 @@ pex_bin_attrs = _dmerge(pex_attrs, {
         default = True,
         mandatory = False,
     ),
+    "strip_pex_path_prefixes": attr.string_list(),
 })
 
 pex_library = rule(

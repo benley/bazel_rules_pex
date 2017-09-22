@@ -1,7 +1,8 @@
 language: java
 
 env:
-  - BAZEL_VERSION=0.5.4
+  - BAZEL_URL=https://storage.googleapis.com/bazel/0.6.0/rc3/bazel-0.6.0rc3
+  - BAZEL_URL=https://storage.googleapis.com/bazel/0.5.4/release/bazel-0.5.4
 
 os:
   - linux
@@ -32,7 +33,7 @@ before_script:
       osx)   BAZEL_OS=darwin ;;
       *)     exit 1          ;;
     esac;
-    wget -O bazel-installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh"
+    wget -O bazel-installer.sh "${BAZEL_URL}-installer-${BAZEL_OS}-x86_64.sh"
   - chmod +x bazel-installer.sh
   - ./bazel-installer.sh --user
 

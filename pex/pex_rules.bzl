@@ -208,8 +208,6 @@ def _pex_binary_impl(ctx):
   # form the arguments to pex builder
   arguments =  [] if ctx.attr.zip_safe else ["--not-zip-safe"]
   arguments += [] if ctx.attr.pex_use_wheels else ["--no-use-wheel"]
-  if ctx.attr.interpreter:
-    arguments += ["--python", ctx.attr.interpreter]
   if ctx.attr.no_index:
     arguments += ["--no-index"]
   if ctx.attr.disable_cache:
@@ -250,6 +248,7 @@ def _pex_binary_impl(ctx):
           # Also, what if python is actually in /opt or something?
           'PATH': '/bin:/usr/bin:/usr/local/bin',
           'PEX_VERBOSE': str(ctx.attr.pex_verbosity),
+          'PEX_PYTHON': str(ctx.attr.interpreter),
           'PEX_ROOT': '.pex',  # So pex doesn't try to unpack into $HOME/.pex
       },
       arguments = arguments,

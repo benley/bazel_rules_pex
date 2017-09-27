@@ -5,6 +5,7 @@ genrule(
     name = "pex_wrapper",
     srcs = [
         "wrapper/setup.py",
+        "wrapper/setup.cfg",
         "wrapper/pex_wrapper.py",
         "wrapper/README",
         "@setuptools_whl//file",

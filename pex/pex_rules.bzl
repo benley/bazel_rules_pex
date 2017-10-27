@@ -513,8 +513,8 @@ def pex_repositories():
   """Rules to be invoked from WORKSPACE for remote dependencies."""
   native.http_file(
       name = 'pytest_whl',
-      url = 'https://pypi.python.org/packages/e0/1e/d52c6a3a143935410ee33320341ea7bbb770ca8fe89c3d51e18254e0a2ba/pytest-3.2.1-py2.py3-none-any.whl',
-      sha256 = '82c1e44a964ec5922c7c3891787df31c8c4f18b6c97a722df56b6cf20bb38c8a'
+      url = 'https://pypi.python.org/packages/8c/7d/f5d71f0e28af32388e07bd4ce0dbd2b3539693aadcae4403266173ec87fa/pytest-3.2.3-py2.py3-none-any.whl',
+      sha256 = '81a25f36a97da3313e1125fce9e7bbbba565bc7fec3c5beb14c262ddab238ac1'
   )
 
   native.http_file(
@@ -537,8 +537,8 @@ def pex_repositories():
 
   native.http_file(
       name = "pex_src",
-      url = "https://pypi.python.org/packages/3e/e8/d306b2d82487113ad188788a61895e7d474fa25823c23e19bb65f904cf30/pex-1.2.9.tar.gz",
-      sha256 = "26b63958d071f6a887b4b9d6230c1c1a1dc721572f5a0e48fd0eac71b0e663a9",
+      url = "https://pypi.python.org/packages/58/ab/ac60cf7f2e855a6e621f2bbfe88c4e2479658650c2af5f1f26f9fc6deefb/pex-1.2.13.tar.gz",
+      sha256 = "53b592ec04dc2829d8ea3a13842bfb378e1531ae788b10d0d5a1ea6cac45388c",
   )
 
   native.http_file(

@@ -103,63 +103,54 @@ Exceptions are `main` and `entrypoint`, which cannot be used with this macro.
       <td><code>deps</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.eggs">
       <td><code>eggs</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.data">
       <td><code>data</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.args">
       <td><code>args</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.flaky">
       <td><code>flaky</code></td>
       <td>
         <p><code>Unknown; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.local">
       <td><code>local</code></td>
       <td>
         <p><code>Unknown; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.size">
       <td><code>size</code></td>
       <td>
         <p><code>Unknown; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.timeout">
       <td><code>timeout</code></td>
       <td>
         <p><code>Unknown; Optional</code></p>
-        
       </td>
     </tr>
     <tr id="pex_pytest.tags">
       <td><code>tags</code></td>
       <td>
         <p><code>List of strings; Optional</code></p>
-        
       </td>
     </tr>
   </tbody>
@@ -222,7 +213,6 @@ will be relative to the workspace root.</p>
       <td><code>srcs</code></td>
       <td>
         <p><code>List of <a href="https://bazel.build/docs/build-ref.html#labels">labels</a>; Optional; Default is []</code></p>
-        
       </td>
     </tr>
     <tr id="pex_binary.disable_cache">
@@ -275,14 +265,12 @@ It is an error to specify both main and entrypoint.</p>
       <td><code>pex_use_wheels</code></td>
       <td>
         <p><code>Boolean; Optional; Default is True</code></p>
-        
       </td>
     </tr>
     <tr id="pex_binary.pex_verbosity">
       <td><code>pex_verbosity</code></td>
       <td>
         <p><code>Integer; Optional; Default is 0</code></p>
-        
       </td>
     </tr>
     <tr id="pex_binary.repos">
@@ -316,7 +304,6 @@ the transitive python dependencies and fetch them from pypi.</p>
       <td><code>zip_safe</code></td>
       <td>
         <p><code>Boolean; Optional; Default is True</code></p>
-        
       </td>
     </tr>
   </tbody>
@@ -370,7 +357,6 @@ will be relative to the workspace root.</p>
       <td><code>srcs</code></td>
       <td>
         <p><code>List of <a href="https://bazel.build/docs/build-ref.html#labels">labels</a>; Optional; Default is []</code></p>
-        
       </td>
     </tr>
     <tr id="pex_library.disable_cache">
@@ -472,7 +458,6 @@ will be relative to the workspace root.</p>
       <td><code>srcs</code></td>
       <td>
         <p><code>List of <a href="https://bazel.build/docs/build-ref.html#labels">labels</a>; Optional; Default is []</code></p>
-        
       </td>
     </tr>
     <tr id="pex_test.disable_cache">
@@ -525,14 +510,12 @@ It is an error to specify both main and entrypoint.</p>
       <td><code>pex_use_wheels</code></td>
       <td>
         <p><code>Boolean; Optional; Default is True</code></p>
-        
       </td>
     </tr>
     <tr id="pex_test.pex_verbosity">
       <td><code>pex_verbosity</code></td>
       <td>
         <p><code>Integer; Optional; Default is 0</code></p>
-        
       </td>
     </tr>
     <tr id="pex_test.repos">
@@ -566,7 +549,6 @@ the transitive python dependencies and fetch them from pypi.</p>
       <td><code>zip_safe</code></td>
       <td>
         <p><code>Boolean; Optional; Default is True</code></p>
-        
       </td>
     </tr>
   </tbody>

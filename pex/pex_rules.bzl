@@ -156,10 +156,15 @@ def _gen_manifest(py, runfiles):
         ),
     )
 
+  # All .so files that end with .so, .so.#, .so.#.#, etc.
+  native_libs = [f.short_path for f in runfiles.files
+                 if f.extension == "so"
+                 or f.basename.partition(".so")[2].replace(".", "").isdigit()]
   return struct(
       modules = pex_files,
       requirements = list(py.transitive_reqs),
       prebuiltLibraries = [f.path for f in py.transitive_eggs],
+      nativeLibraries = native_libs,
   )
 
 

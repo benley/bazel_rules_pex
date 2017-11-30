@@ -1,6 +1,7 @@
 language: java
 
 env:
+  - BAZEL_URL=https://storage.googleapis.com/bazel/0.8.0/release/bazel-0.8.0
   - BAZEL_URL=https://storage.googleapis.com/bazel/0.7.0/release/bazel-0.7.0
   - BAZEL_URL=https://storage.googleapis.com/bazel/0.6.1/release/bazel-0.6.1
   - BAZEL_URL=https://storage.googleapis.com/bazel/0.5.4/release/bazel-0.5.4

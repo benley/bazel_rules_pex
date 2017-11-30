@@ -35,7 +35,7 @@ genrule(
         $(location @virtualenv//:virtualenv) --no-download --quiet --clear "$$VENV"
         PYTHON="$$VENV/bin/python"
 
-        $$VENV/bin/pip install pex \
+        $$PYTHON $$VENV/bin/pip install pex \
             --quiet --no-cache-dir --no-index --build $(@D)/pexbuild \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_whl//file))
@@ -45,7 +45,7 @@ genrule(
         cp -r $$(dirname $(location wrapper/setup.py)) $(@D)/.pex_wrapper
 
         # Use the bootstrapped pex to build pex_wrapper.pex
-        $$VENV/bin/pex $(@D)/.pex_wrapper \
+        $$PYTHON $$VENV/bin/pex $(@D)/.pex_wrapper \
             --disable-cache --no-index -m pex_wrapper -o $@ \
             --find-links $$(dirname $(location @pex_src//file)) \
             --find-links $$(dirname $(location @setuptools_whl//file)) \

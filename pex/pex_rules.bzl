@@ -580,7 +580,8 @@ def pex_repositories():
           "py_binary(",
           "    name = 'virtualenv',",
           "    srcs = ['virtualenv.py'],",
-          "    data = glob(['**/*']),",
+          # exclude .pyc: Otherwise bazel detects a change after running virtualenv.py
+          "    data = glob(['**/*'], exclude=['*.pyc']),",
           "    visibility = ['//visibility:public'],",
           ")",
       ])

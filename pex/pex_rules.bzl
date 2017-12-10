@@ -277,17 +277,29 @@ def _pex_binary_impl(ctx):
 
 def _get_runfile_path(ctx, f):
   """Return the path to f, relative to runfiles."""
-  if ctx.workspace_name:
-    return ctx.workspace_name + "/" + f.short_path
+  # For directories we need to fetch the path by checking one of the files.
+  # XXX: In case directory is empty this will fail.
+  if hasattr(f, 'files'):
+    short_path = f.files.to_list()[0].short_path.rsplit('/', 1)[0]
   else:
-    return f.short_path
+    short_path = f.short_path
+
+  if ctx.workspace_name:
+    return ctx.workspace_name + "/" + short_path
+  else:
+    return short_path
 
 
 def _pex_pytest_impl(ctx):
   test_runner = ctx.executable.runner
+  test_dirs = ctx.attr.test_dirs
   output_file = ctx.outputs.executable
 
-  test_file_paths = ["${RUNFILES}/" + _get_runfile_path(ctx, f) for f in ctx.files.srcs]
+  if test_dirs:
+    test_file_paths = ["${RUNFILES}/" + _get_runfile_path(ctx, d) for d in test_dirs]
+  else:
+    test_file_paths = ["${RUNFILES}/" + _get_runfile_path(ctx, f) for f in ctx.files.srcs]
+
   ctx.template_action(
       template = ctx.file.launcher_template,
       output = output_file,
@@ -445,6 +457,10 @@ _pytest_pex_test = rule(
             single_file = True,
             default = Label("//pex:testlauncher.sh.template"),
         ),
+        "test_dirs": attr.label_list(
+            allow_files = True,
+            flags = ["DIRECT_COMPILE_TIME_INPUT"]
+        ),
     }),
 )
 
@@ -456,6 +472,8 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
                size=None,
                timeout=None,
                tags=[],
+               launcher_template=None,
+               test_dirs=[],
                **kwargs):
   """A variant of pex_test that uses py.test to run one or more sets of tests.
 
@@ -499,6 +517,7 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
       name = name,
       runner = ":%s_runner" % name,
       args = args,
+      test_dirs = test_dirs,
       data = data,
       flaky = flaky,
       local = local,
@@ -506,6 +525,7 @@ def pex_pytest(name, srcs, deps=[], eggs=[], data=[],
       srcs = srcs,
       timeout = timeout,
       tags = tags,
+      launcher_template = launcher_template,
   )
 
 

@@ -225,6 +225,8 @@ def _pex_binary_impl(ctx):
       "--cache-dir", ".pex/build",
       manifest_file.path,
   ]
+  if ctx.attr.interpreter != "":
+    arguments += ["--python-shebang", ctx.attr.interpreter]
 
   # form the inputs to pex builder
   _inputs = (

@@ -109,7 +109,6 @@ def main():
             except Exception as err:
                 raise RuntimeError("Failed to add %s: %s" % (egg, err))
 
-        # TODO(mikekap): Do something about manifest['nativeLibraries'].
         with open(os.path.join(poptions.pex_root, 'native_libs.txt'), 'w') as libs_f:
             libs = manifest.get('nativeLibraries', [])
             libs_f.write('\n'.join(libs))

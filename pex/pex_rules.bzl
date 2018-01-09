@@ -64,6 +64,13 @@ repo_file_types = FileType([
     ".tbz"
 ])
 
+extension_file_types = FileType([
+    ".so",   # Linux/Mac OS X
+    ".pyd",  # Windows
+    ".dll",  # BSD (Cygwin)
+    # ".o",    # Sun (disabled)
+])
+
 # As much as I think this test file naming convention is a good thing, it's
 # probably a bad idea to impose it as a policy to all OSS users of these rules,
 # so I guess let's skip it.
@@ -132,6 +139,7 @@ def _pex_library_impl(ctx):
   )
 
 
+
 def _gen_manifest(py, runfiles):
   """Generate a manifest for pex_wrapper.
 
@@ -156,10 +164,7 @@ def _gen_manifest(py, runfiles):
         ),
     )
 
-  # All .so files that end with .so, .so.#, .so.#.#, etc.
-  native_libs = [f.short_path for f in runfiles.files
-                 if f.extension == "so"
-                 or f.basename.partition(".so")[2].replace(".", "").isdigit()]
+  native_libs = extension_file_types.filter(runfiles.files)
   return struct(
       modules = pex_files,
       requirements = list(py.transitive_reqs),

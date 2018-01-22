@@ -6,3 +6,10 @@ pex_library(
     visibility = ["//visibility:public"],
     licenses = ["notice"],  # makes bazel's default --check-licenses happy
 )
+
+pex_pytest(
+    name = "example_test",
+    srcs = ["example_test.py"],
+    deps = [":example"],
+    licenses = ["notice"],  # makes bazel's default --check-licenses happy
+)

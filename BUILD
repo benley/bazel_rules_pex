@@ -1,3 +1,8 @@
+load(
+    "@io_bazel_skydoc//skylark:skylark.bzl",
+    "skylark_doc",
+)
+
 genrule(
     name = "README",
     srcs = [":docs"],

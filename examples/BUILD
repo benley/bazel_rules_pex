@@ -1,3 +1,5 @@
+load("//pex:pex_rules.bzl", "pex_binary", "pex_library", "pex_pytest")
+
 pex_binary(
     name = "foo",
     srcs = ["foo.py"],
@@ -14,8 +16,8 @@ pex_library(
 
 pex_pytest(
     name = "foo_test",
+    size = "small",
     srcs = ["foo_test.py"],
     args = ["--strict"],
     deps = [":libfoo"],
-    size = "small",
 )

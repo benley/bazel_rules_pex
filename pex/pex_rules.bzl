@@ -132,7 +132,18 @@ def _pex_library_impl(ctx):
   )
 
 
-def _gen_manifest(py, runfiles):
+def _strip_import_paths_from_workspace_name(ctx, import_paths=[]):
+  new_import_paths = set()
+  workspace_name = ctx.workspace_name
+
+  for import_path in import_paths:
+    if import_path.startswith(workspace_name):
+      new_import_paths += [import_path[len(workspace_name) + 1:]] # including /
+
+  return new_import_paths
+
+
+def _gen_manifest(py, runfiles, import_paths=[]):
   """Generate a manifest for pex_wrapper.
 
   Returns:
@@ -149,6 +160,12 @@ def _gen_manifest(py, runfiles):
     dpath = f.short_path
     if dpath.startswith("../"):
       dpath = dpath[3:]
+
+    for import_path in import_paths:
+      if dpath.startswith(import_path):
+          dpath = dpath[len(import_path) + 1:] # including /
+          break # don't do multiple replaces
+
     pex_files.append(
         struct(
             src = f.path,
@@ -186,8 +203,13 @@ def _pex_binary_impl(ctx):
   py = _collect_transitive(ctx)
   repos = _collect_repos(ctx)
 
+  import_paths = set()
+
   for dep in ctx.attr.deps:
     transitive_files += dep.default_runfiles.files
+    for runfile in dep.default_runfiles.files:
+      import_paths += dep.py.imports
+
   runfiles = ctx.runfiles(
       collect_default = True,
       transitive_files = transitive_files,
@@ -196,7 +218,10 @@ def _pex_binary_impl(ctx):
   manifest_file = ctx.new_file(
       ctx.configuration.bin_dir, deploy_pex, '_manifest')
 
-  manifest = _gen_manifest(py, runfiles)
+  manifest = _gen_manifest(
+      py,
+      runfiles,
+      _strip_import_paths_from_workspace_name(ctx, import_paths))
 
   ctx.file_action(
       output = manifest_file,

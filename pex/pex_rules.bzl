@@ -168,13 +168,16 @@ def _pex_binary_impl(ctx):
 
   if ctx.attr.entrypoint and ctx.file.main:
     fail("Please specify either entrypoint or main, not both.")
+  main_file = None
+  main_pkg = ''
   if ctx.attr.entrypoint:
-    main_file = None
     main_pkg = ctx.attr.entrypoint
   elif ctx.file.main:
     main_file = ctx.file.main
   else:
-    main_file = pex_file_types.filter(ctx.files.srcs)[0]
+    filtered_srcs = pex_file_types.filter(ctx.files.srcs)
+    if filtered_srcs:
+      main_file = filtered_srcs[0]
   if main_file:
     # Translate main_file's short path into a python module name
     main_pkg = main_file.short_path.replace('/', '.')[:-3]

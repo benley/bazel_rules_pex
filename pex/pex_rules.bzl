@@ -46,12 +46,12 @@ Lastly, make sure that `tools/build_rules/BUILD` exists, even if it is empty,
 so that Bazel can find your `prelude_bazel` file.
 """
 
-pex_file_types = FileType([".py"])
-egg_file_types = FileType([".egg", ".whl"])
-req_file_types = FileType([".txt"])
+pex_file_types = endswith([".py"])
+egg_file_types = endswith([".egg", ".whl"])
+req_file_types = endswith([".txt"])
 
 # Repos file types according to: https://www.python.org/dev/peps/pep-0527/
-repo_file_types = FileType([
+repo_file_types = endswith([
     ".egg",
     ".whl",
     ".tar.gz",
@@ -68,7 +68,7 @@ repo_file_types = FileType([
 # probably a bad idea to impose it as a policy to all OSS users of these rules,
 # so I guess let's skip it.
 #
-# pex_test_file_types = FileType(["_unittest.py", "_test.py"])
+# pex_test_file_types = endswith(["_unittest.py", "_test.py"])
 
 
 def _collect_transitive_sources(ctx):

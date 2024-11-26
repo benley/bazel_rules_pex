@@ -45,6 +45,7 @@ def parse_manifest(manifest_text):
         "resources": [ {"src": "path_on_disk", "dest": "path_in_pex"}, ... ],
         "prebuiltLibraries": [ "path1", "path2", ... ],
         "requirements": [ "thing1", "thing2==version", ... ],
+        "nativeLibraries": ["path1.so", "path2.so"],
       }
     """
     return json.loads(manifest_text)
@@ -108,7 +109,10 @@ def main():
             except Exception as err:
                 raise RuntimeError("Failed to add %s: %s" % (egg, err))
 
-        # TODO(mikekap): Do something about manifest['nativeLibraries'].
+        with open(os.path.join(poptions.pex_root, 'native_libs.txt'), 'w') as libs_f:
+            libs = manifest.get('nativeLibraries', [])
+            libs_f.write('\n'.join(libs))
+        pex_builder.add_source(libs_f.name, 'native_libs.txt')
 
         pexbin.log('Saving PEX file to %s' % poptions.pex_name,
                    v=poptions.verbosity)

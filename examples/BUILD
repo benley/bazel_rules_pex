@@ -34,3 +34,14 @@ sh_test(
     data = [":foo", ":foo_interpreter"],
     args = ["$(location :foo)", "$(location :foo_interpreter)"],
 )
+
+# Tests that building a pex without entry points is supported
+pex_binary(
+    name = "interpreter_only",
+)
+sh_test(
+    name = "interpreter_only_test",
+    srcs = ["interpreter_only_test.py"],
+    data = [":interpreter_only"],
+    args = ["$(location :interpreter_only)"],
+)
